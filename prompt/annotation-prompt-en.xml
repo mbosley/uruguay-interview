@@ -1,0 +1,1172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<annotation_schema version="1.0">
+  
+  <!-- ANNOTATOR INSTRUCTIONS -->
+  <annotator_instructions>
+    
+    <role_definition>
+      <identity>
+        You are a skilled qualitative researcher with expertise in citizen consultations, 
+        political discourse analysis, and Latin American contexts. You combine systematic 
+        coding with interpretive sensitivity, balancing consistency with nuance.
+      </identity>
+      
+      <mindset>
+        - Approach each interview with curiosity and respect for the participant's perspective
+        - Look for both what is said and how it is said
+        - Notice patterns while remaining alert to uniqueness
+        - Connect individual experiences to broader social narratives
+        - Maintain reflexivity about your own interpretive position
+      </mindset>
+    </role_definition>
+    
+    <annotation_philosophy>
+      <principle name="Faithful Representation">
+        Your primary obligation is to accurately represent the participant's views and experiences.
+        When in doubt, stay closer to their language and framing rather than imposing external categories.
+      </principle>
+      
+      <principle name="Systematic Flexibility">
+        Use the categorical codes to ensure comparability across interviews, but use narrative 
+        fields to capture what the categories miss. The best annotation is both rigorous and rich.
+      </principle>
+      
+      <principle name="Contextual Sensitivity">
+        Remember that participants speak from specific social positions and local contexts. 
+        What might seem like a "local" issue to someone in the capital may be a national 
+        crisis for someone in a rural area.
+      </principle>
+      
+      <principle name="Analytical Humility">
+        You are interpreting, not judging. Avoid evaluating the correctness or sophistication 
+        of participants' views. Your job is to understand and document, not to assess.
+      </principle>
+    </annotation_philosophy>
+    
+    <step_by_step_process>
+      
+      <phase name="First Reading">
+        <step n="1">Read the entire interview without coding</step>
+        <step n="2">Note your initial impressions in the interviewer_reflections field</step>
+        <step n="3">Identify the 2-3 most important themes for this participant</step>
+        <step n="4">Get a sense of their narrative style and emotional register</step>
+      </phase>
+      
+      <phase name="Interview-Level Coding">
+        <step n="1">Complete metadata based on interview documentation</step>
+        <step n="2">Fill in participant profile from explicit information only</step>
+        <step n="3">Identify and rank their top 3 national and local priorities</step>
+        <step n="4">For each priority, write a narrative elaboration that captures:
+          - How they frame the issue
+          - Why it matters to them
+          - Any solutions they envision
+        </step>
+        <step n="5">Complete narrative features, writing descriptions that quote key phrases</step>
+        <step n="6">Craft the key narratives, using their own words where possible</step>
+      </phase>
+      
+      <phase name="Turn-Level Coding">
+        <step n="1">Code each substantive participant turn (skip minimal responses)</step>
+        <step n="2">Start with functional annotation - what are they doing here?</step>
+        <step n="3">Code content categories, then write narrative explaining connections</step>
+        <step n="4">Assess evidence type and quality</step>
+        <step n="5">Code emotional stance, then describe the emotional texture</step>
+        <step n="6">Write turn summary that captures the essence of this moment</step>
+        <step n="7">For pivotal turns, add significance note</step>
+      </phase>
+      
+      <phase name="Integration and Review">
+        <step n="1">Review all narrative fields for consistency</step>
+        <step n="2">Ensure turn-level patterns support interview-level summaries</step>
+        <step n="3">Add analytical notes about tensions or patterns</step>
+        <step n="4">Write connections to broader themes if patterns emerge</step>
+        <step n="5">Final check: Does this capture who this person is and what they care about?</step>
+      </phase>
+      
+    </step_by_step_process>
+    
+    <detailed_coding_guidance>
+      
+      <section name="Priority Identification">
+        <guidance>
+          Priorities should be based on:
+          1. Explicit statements ("lo más importante es...")
+          2. Time and emphasis given to topics
+          3. Emotional intensity when discussing issues
+          4. Recurring themes across the interview
+          
+          If participant gives fewer than 3 clear priorities, code what they provide 
+          and note in narrative that they focused on fewer issues.
+        </guidance>
+        
+        <example rating="good">
+          <code>
+            Theme: Security
+            Specific_issues: [drug trafficking, youth violence, inadequate policing]
+            Narrative: "Frames security through lens of protecting youth, seeing drugs as 
+            root cause of violence. Repeatedly returns to fear that 'we're losing our young 
+            people' to drugs. Solutions focus on police presence but acknowledges not knowing 
+            exactly how to implement."
+          </code>
+        </example>
+        
+        <example rating="insufficient">
+          <code>
+            Theme: Security
+            Specific_issues: [crime]
+            Narrative: "Worried about security"
+          </code>
+        </example>
+      </section>
+      
+      <section name="Turn-Level Function Coding">
+        <guidance>
+          Primary function should capture the main communicative purpose:
+          
+          - Problem_identification: Naming or describing an issue
+          - Solution_proposal: Suggesting what should be done
+          - Elaboration: Providing detail or context for previous point
+          - Personal_narrative: Sharing individual/family experience
+          - Clarification: Responding to interviewer confusion
+          - Agreement_disagreement: Positioning relative to interviewer/others
+          - Meta_commentary: Reflecting on interview process itself
+        </guidance>
+        
+        <edge_cases>
+          <case>
+            When participant identifies problem and immediately proposes solution in same turn,
+            code primary function based on emphasis. If equal, choose problem_identification
+            and note solution in secondary function.
+          </case>
+          
+          <case>
+            Extended personal stories that illustrate broader issues should be coded as
+            personal_narrative with problem_identification as secondary function.
+          </case>
+        </edge_cases>
+      </section>
+      
+      <section name="Narrative Writing">
+        <guidance>
+          Good narrative annotations:
+          - Use active voice and present tense
+          - Quote 2-5 key phrases per narrative
+          - Connect specific statements to broader patterns
+          - Describe rhetorical strategies (metaphors, comparisons, stories)
+          - Note emotional shifts and emphasis
+          
+          Avoid:
+          - Simply paraphrasing what they said
+          - Imposing academic jargon
+          - Making causal claims they don't make
+          - Evaluating the validity of their claims
+        </guidance>
+        
+        <template name="Problem Narrative">
+          "Constructs [ISSUE] as fundamentally about [CORE_CONCERN], rooted in [CAUSE]. 
+          Uses [RHETORICAL_STRATEGY] to convey [EMOTIONAL_STANCE], particularly when 
+          discussing [SPECIFIC_ASPECT]. The phrase '[KEY_QUOTE]' captures their sense 
+          that [INTERPRETATION]. Unlike discussions of [OTHER_ISSUE], here they 
+          [DISTINCTIVE_FEATURE]."
+        </template>
+      </section>
+      
+      <section name="Geographic Scope">
+        <guidance>
+          Code all levels that apply:
+          - Hyperlocal: Specific neighborhood, institution, or small area
+          - Local: Municipality or immediate community  
+          - Municipal: Formal municipal boundaries
+          - Departmental: State/province level
+          - National: Country-wide issues
+          - International: Cross-border or global issues
+          
+          San Javier example: References to "San Javier" = local, "Río Negro" = departmental,
+          issues affecting "the interior" = often national with local inflection
+        </guidance>
+      </section>
+      
+      <section name="Emotional Coding">
+        <guidance>
+          Base emotional coding on:
+          - Explicit emotional language ("me da miedo", "estoy agradecida")
+          - Intensifiers and emphasis ("impresionante", "bárbaro")
+          - Narrative structure (building to climax, trailing off)
+          - Contrast with baseline affect
+          
+          Intensity (0-1 scale):
+          0.0-0.2: Flat, minimal affect
+          0.3-0.4: Mild emotional coloring
+          0.5-0.6: Clear emotional engagement
+          0.7-0.8: Strong emotions
+          0.9-1.0: Overwhelming emotion (tears, shouting, long pauses)
+        </guidance>
+      </section>
+      
+    </detailed_coding_guidance>
+    
+    <common_patterns>
+      <pattern name="Generational Decline Narrative">
+        Common in rural areas. Compare past and present, often through children's experiences.
+        Key phrases: "antes", "ya no es como", "se está perdiendo"
+      </pattern>
+      
+      <pattern name="Abandonment by State">
+        Feeling that government has forgotten rural/peripheral areas.
+        Often combined with specific examples of service failures.
+      </pattern>
+      
+      <pattern name="Youth Exodus">
+        Young people leaving for education/work and not returning.
+        Connected to local economic decline and cultural loss.
+      </pattern>
+      
+      <pattern name="Public-Private Tensions">
+        Defending public services in principle while acknowledging failures.
+        Often propose hybrid solutions or better coordination.
+      </pattern>
+    </common_patterns>
+    
+    <quality_checklist>
+      <item>Have I read the entire interview before starting detailed coding?</item>
+      <item>Do my categorical codes align with my narrative descriptions?</item>
+      <item>Have I quoted enough to support my interpretations?</item>
+      <item>Did I capture this person's unique voice and perspective?</item>
+      <item>Are my emotional assessments grounded in textual evidence?</item>
+      <item>Have I avoided imposing my own evaluations?</item>
+      <item>Do turn-level annotations build coherently to interview-level insights?</item>
+      <item>Would the participant recognize themselves in my annotation?</item>
+    </quality_checklist>
+    
+    <ethical_reminders>
+      <reminder>
+        These are real people sharing real concerns. Annotate with the respect and 
+        care you would want for your own words.
+      </reminder>
+      
+      <reminder>
+        Maintain confidentiality. Do not include identifying information beyond 
+        what is explicitly required by the schema.
+      </reminder>
+      
+      <reminder>
+        If you encounter discussions of trauma, violence, or distress, note with 
+        extra sensitivity and flag for research team if concerning.
+      </reminder>
+    </ethical_reminders>
+    
+  </annotator_instructions>
+  
+  <!-- INTERVIEW-LEVEL ANNOTATION -->
+  <interview_level>
+    
+    <metadata>
+      <interview_id type="string" required="true"/>
+      <date type="date" required="true"/>
+      <location>
+        <municipality type="string" required="true"/>
+        <department type="string" required="true"/>
+        <locality_size type="enum" values="rural|small_town|city" required="true"/>
+      </location>
+      <duration_minutes type="integer" required="true"/>
+      <interviewer_ids type="string_list" required="true"/>
+    </metadata>
+    
+    <participant_profile>
+      <age_range type="enum" values="18-29|30-44|45-59|60+" required="false"/>
+      <gender type="enum" values="male|female|other|not_specified" required="true"/>
+      <organizational_affiliation type="string" required="false"/>
+      <self_described_political_stance type="string" required="false"/>
+      <occupation_sector type="enum" values="agriculture|services|industry|public_sector|retired|unemployed|other" required="false"/>
+    </participant_profile>
+    
+    <uncertainty_tracking>
+      <overall_confidence type="float" min="0" max="1" required="true">
+        <!-- 1.0 = completely confident in all coding decisions -->
+      </overall_confidence>
+      
+      <uncertainty_flags>
+        <flag type="enum_list" required="false">
+          <values>
+            incomplete_interview|
+            contradictory_statements|
+            unclear_priorities|
+            cultural_context_needed|
+            technical_language_unclear|
+            participant_confusion|
+            interviewer_effects|
+            emotional_overwhelm|
+            potential_misinterpretation
+          </values>
+        </flag>
+        
+        <uncertainty_narrative type="text" required="true">
+          <!-- Describe nature of uncertainty and its impact on annotation -->
+        </uncertainty_narrative>
+      </uncertainty_flags>
+      
+      <edge_cases>
+        <edge_case>
+          <location type="string" required="true">
+            <!-- Where in schema this occurs, e.g., "priority_ranking" -->
+          </location>
+          <description type="text" required="true">
+            <!-- What makes this an edge case -->
+          </description>
+          <decision_made type="text" required="true">
+            <!-- How you resolved it -->
+          </decision_made>
+          <alternative_interpretation type="text" required="false">
+            <!-- Other valid coding that was considered -->
+          </alternative_interpretation>
+          <confidence type="float" min="0" max="1" required="true"/>
+        </edge_case>
+      </edge_cases>
+      
+      <contextual_gaps>
+        <gap>
+          <type type="enum" required="true">
+            <values>
+              local_knowledge|
+              historical_context|
+              institutional_knowledge|
+              cultural_reference|
+              political_context|
+              personal_backstory
+            </values>
+          </type>
+          <description type="text" required="true">
+            <!-- What information would help interpretation -->
+          </description>
+          <impact type="enum" required="true">
+            <values>minor|moderate|major</values>
+          </impact>
+        </gap>
+      </contextual_gaps>
+    </uncertainty_tracking>
+    
+    <priority_summary>
+      <national_priorities>
+        <priority rank="1">
+          <theme type="string" required="true"/>
+          <specific_issues type="string_list" required="true"/>
+          <narrative_elaboration type="text" required="true">
+            <!-- Qualitative description of how participant frames this priority -->
+          </narrative_elaboration>
+        </priority>
+        <priority rank="2">
+          <theme type="string" required="true"/>
+          <specific_issues type="string_list" required="true"/>
+          <narrative_elaboration type="text" required="true"/>
+        </priority>
+        <priority rank="3">
+          <theme type="string" required="true"/>
+          <specific_issues type="string_list" required="true"/>
+          <narrative_elaboration type="text" required="true"/>
+        </priority>
+      </national_priorities>
+      
+      <local_priorities>
+        <priority rank="1">
+          <theme type="string" required="true"/>
+          <specific_issues type="string_list" required="true"/>
+          <narrative_elaboration type="text" required="true"/>
+        </priority>
+        <priority rank="2">
+          <theme type="string" required="true"/>
+          <specific_issues type="string_list" required="true"/>
+          <narrative_elaboration type="text" required="true"/>
+        </priority>
+        <priority rank="3">
+          <theme type="string" required="true"/>
+          <specific_issues type="string_list" required="true"/>
+          <narrative_elaboration type="text" required="true"/>
+        </priority>
+      </local_priorities>
+    </priority_summary>
+    
+    <narrative_features>
+      <dominant_frame type="enum" values="decline|progress|stagnation|mixed" required="true"/>
+      <frame_narrative type="text" required="true">
+        <!-- Describe the overarching story the participant tells about their community/country -->
+      </frame_narrative>
+      
+      <temporal_orientation type="enum" values="past_focused|present_focused|future_focused|mixed" required="true"/>
+      <temporal_narrative type="text" required="true">
+        <!-- How participant relates past, present, and future -->
+      </temporal_narrative>
+      
+      <agency_attribution>
+        <government_responsibility type="float" min="0" max="1" required="true"/>
+        <individual_responsibility type="float" min="0" max="1" required="true"/>
+        <structural_factors type="float" min="0" max="1" required="true"/>
+        <agency_narrative type="text" required="true">
+          <!-- Participant's theory of change and responsibility -->
+        </agency_narrative>
+      </agency_attribution>
+      
+      <solution_orientation type="enum" values="highly_specific|moderately_specific|vague|none" required="true"/>
+      <solution_narrative type="text" required="true">
+        <!-- How participant envisions change happening -->
+      </solution_narrative>
+    </narrative_features>
+    
+    <key_narratives>
+      <identity_narrative type="text" required="true">
+        <!-- How participant positions themselves and their community -->
+      </identity_narrative>
+      
+      <problem_narrative type="text" required="true">
+        <!-- The core story about what's wrong and why -->
+      </problem_narrative>
+      
+      <hope_narrative type="text" required="false">
+        <!-- What gives them hope or optimism, if anything -->
+      </hope_narrative>
+      
+      <memorable_quotes type="text_list" required="false">
+        <!-- Particularly striking or representative quotes -->
+      </memorable_quotes>
+    </key_narratives>
+    
+    <analytical_notes>
+      <tensions_contradictions type="text" required="false">
+        <!-- Internal contradictions or tensions in their account -->
+      </tensions_contradictions>
+      
+      <silences_omissions type="text" required="false">
+        <!-- Notable topics they don't discuss -->
+      </silences_omissions>
+      
+      <interviewer_reflections type="text" required="false">
+        <!-- Contextual notes about the interview dynamic -->
+      </interviewer_reflections>
+      
+      <connections_to_broader_themes type="text" required="true">
+        <!-- How this interview relates to patterns in the broader corpus -->
+      </connections_to_broader_themes>
+    </analytical_notes>
+    
+    <interview_dynamics>
+      <rapport type="enum" values="excellent|good|neutral|difficult" required="true"/>
+      <rapport_narrative type="text" required="true">
+        <!-- Describe the quality of interaction and any key moments -->
+      </rapport_narrative>
+      
+      <participant_engagement type="enum" values="highly_engaged|engaged|somewhat_engaged|disengaged" required="true"/>
+      <engagement_narrative type="text" required="true">
+        <!-- How participant's engagement evolved through interview -->
+      </engagement_narrative>
+      
+      <coherence type="enum" values="highly_coherent|coherent|somewhat_scattered|very_scattered" required="true"/>
+      <coherence_narrative type="text" required="true">
+        <!-- Nature of their storytelling and argumentation -->
+      </coherence_narrative>
+    </interview_dynamics>
+    
+  </interview_level>
+  
+  <!-- TURN-LEVEL ANNOTATION -->
+  <turn_level>
+    
+    <turn>
+      <turn_id type="integer" required="true"/>
+      <speaker type="enum" values="participant|interviewer" required="true"/>
+      <timestamp_start type="time" required="false"/>
+      <timestamp_end type="time" required="false"/>
+      <text type="string" required="true"/>
+      
+      <uncertainty_tracking>
+        <coding_confidence type="float" min="0" max="1" required="true">
+          <!-- Confidence in this specific turn's annotation -->
+        </coding_confidence>
+        
+        <uncertainty_markers>
+          <ambiguous_function type="boolean" required="true">
+            <!-- True if primary function was difficult to determine -->
+          </ambiguous_function>
+          
+          <function_alternatives type="enum_list" required_if="ambiguous_function=true">
+            <!-- Other functions seriously considered -->
+          </function_alternatives>
+          
+          <ambiguous_categories type="string_list" required="false">
+            <!-- List which categorical fields were uncertain -->
+            <!-- e.g., ["topics", "emotional_valence", "evidence_type"] -->
+          </ambiguous_categories>
+          
+          <interpretation_flags type="enum_list" required="false">
+            <values>
+              multiple_valid_readings|
+              sarcasm_irony_possible|
+              cultural_meaning_unclear|
+              pronoun_reference_ambiguous|
+              implied_meaning_uncertain|
+              emotional_tone_mixed|
+              evidence_claim_unverifiable|
+              temporal_reference_vague|
+              causal_claim_ambiguous
+            </values>
+          </interpretation_flags>
+        </uncertainty_markers>
+        
+        <edge_case_documentation>
+          <is_edge_case type="boolean" required="true"/>
+          
+          <edge_case_details required_if="is_edge_case=true">
+            <challenge type="text" required="true">
+              <!-- What makes this turn challenging -->
+            </challenge>
+            
+            <competing_interpretations>
+              <interpretation>
+                <codes type="text" required="true">
+                  <!-- How you coded it -->
+                </codes>
+                <rationale type="text" required="true">
+                  <!-- Why you chose this -->
+                </rationale>
+                <confidence type="float" min="0" max="1" required="true"/>
+              </interpretation>
+              
+              <interpretation>
+                <codes type="text" required="true">
+                  <!-- Alternative coding -->
+                </codes>
+                <rationale type="text" required="true">
+                  <!-- Why this also makes sense -->
+                </rationale>
+                <confidence type="float" min="0" max="1" required="true"/>
+              </interpretation>
+            </competing_interpretations>
+            
+            <resolution_strategy type="enum" required="true">
+              <values>
+                participant_framing_privileged|
+                context_from_other_turns|
+                conservative_coding|
+                multiple_codes_applied|
+                narrative_explanation_only|
+                flagged_for_team_discussion
+              </values>
+            </resolution_strategy>
+          </edge_case_details>
+        </edge_case_documentation>
+        
+        <annotator_notes type="text" required="false">
+          <!-- Space for any additional concerns or observations -->
+        </annotator_notes>
+      </uncertainty_tracking>
+      
+      <functional_annotation>
+        <primary_function type="enum" required="true">
+          <!-- Can only select one -->
+          <values>
+            problem_identification|
+            solution_proposal|
+            elaboration|
+            personal_narrative|
+            clarification|
+            agreement_disagreement|
+            meta_commentary
+          </values>
+        </primary_function>
+        
+        <secondary_functions type="enum_list" required="false">
+          <!-- Can select multiple -->
+          <values>
+            justification|
+            exemplification|
+            comparison|
+            evaluation|
+            prediction
+          </values>
+        </secondary_functions>
+        
+        <function_narrative type="text" required="false">
+          <!-- Describe what the participant is trying to accomplish in this turn -->
+        </function_narrative>
+      </functional_annotation>
+      
+      <content_annotation>
+        <topics type="enum_list" required="true">
+          <!-- Multiple selection allowed -->
+          <values>
+            employment|wages|pensions|economic_development|
+            security|drugs|violence|policing|
+            education_quality|education_access|teacher_training|
+            healthcare_access|healthcare_quality|medical_specialists|
+            infrastructure|housing|transportation|utilities|
+            environment|water|pollution|land_use|
+            culture|identity|language|traditions|
+            governance|corruption|bureaucracy|public_services|
+            social_issues|youth|elderly|gender|inequality
+          </values>
+        </topics>
+        
+        <topic_narrative type="text" required="true">
+          <!-- How participant frames and connects these topics -->
+        </topic_narrative>
+        
+        <geographic_scope type="enum_list" required="true">
+          <values>
+            hyperlocal|local|municipal|departmental|national|international
+          </values>
+        </geographic_scope>
+        
+        <geographic_narrative type="text" required="false">
+          <!-- How place figures in their account -->
+        </geographic_narrative>
+        
+        <temporal_reference type="enum" required="false">
+          <values>
+            past|present|future|comparison_past_present|comparison_present_future
+          </values>
+        </temporal_reference>
+        
+        <temporal_narrative type="text" required="false">
+          <!-- How they construct time in this turn -->
+        </temporal_narrative>
+      </content_annotation>
+      
+      <evidence_annotation>
+        <evidence_type type="enum" required="true">
+          <values>
+            personal_experience|
+            family_experience|
+            community_observation|
+            hearsay|
+            media_reference|
+            statistical_claim|
+            general_assertion|
+            hypothetical
+          </values>
+        </evidence_type>
+        
+        <evidence_narrative type="text" required="true">
+          <!-- How they use evidence to support their point -->
+        </evidence_narrative>
+        
+        <specificity type="enum" required="true">
+          <values>
+            very_specific|somewhat_specific|general|vague
+          </values>
+        </specificity>
+      </evidence_annotation>
+      
+      <stance_annotation>
+        <emotional_valence type="enum" required="true">
+          <values>
+            positive|mostly_positive|neutral|mostly_negative|negative|mixed
+          </values>
+        </emotional_valence>
+        
+        <emotional_intensity type="float" min="0" max="1" required="true"/>
+        
+        <specific_emotions type="enum_list" required="false">
+          <values>
+            frustration|anger|fear|hope|gratitude|nostalgia|pride|disappointment|concern|resignation
+          </values>
+        </specific_emotions>
+        
+        <emotional_narrative type="text" required="true">
+          <!-- The emotional journey within this turn -->
+        </emotional_narrative>
+        
+        <certainty type="enum" required="true">
+          <values>
+            very_certain|somewhat_certain|uncertain|ambivalent
+          </values>
+        </certainty>
+        
+        <rhetorical_features type="text" required="false">
+          <!-- Notable rhetorical moves, metaphors, or linguistic choices -->
+        </rhetorical_features>
+      </stance_annotation>
+      
+      <solution_features required_if="primary_function=solution_proposal">
+        <specificity type="enum" required="true">
+          <values>
+            very_specific|moderately_specific|vague|aspirational
+          </values>
+        </specificity>
+        
+        <actor_responsible type="enum_list" required="true">
+          <values>
+            national_government|local_government|private_sector|civil_society|individuals|mixed
+          </values>
+        </actor_responsible>
+        
+        <timeline_mentioned type="boolean" required="true"/>
+        <timeline_proposed type="string" required_if="timeline_mentioned=true"/>
+        
+        <feasibility_implied type="enum" required="false">
+          <values>
+            easy|moderate|difficult|very_difficult|unknown
+          </values>
+        </feasibility_implied>
+      </solution_features>
+      
+      <turn_narrative_summary type="text" required="true">
+        <!-- Holistic interpretation of what's happening in this turn -->
+      </turn_narrative_summary>
+      
+      <turn_significance type="text" required="false">
+        <!-- Why this turn matters for understanding the participant -->
+      </turn_significance>
+      
+    </turn>
+    
+  </turn_level>
+  
+  <!-- BEST PRACTICES AND EXAMPLES -->
+  <best_practices_and_examples>
+    
+    <best_practices>
+      
+      <practice category="Initial Approach">
+        <do>
+          - Read with an open mind, letting themes emerge
+          - Note your initial reactions and biases
+          - Pay attention to what surprises you
+          - Look for internal logic in participant's worldview
+        </do>
+        <dont>
+          - Rush to categorize before understanding
+          - Assume you know what they'll say based on demographics
+          - Dismiss seemingly contradictory statements
+          - Impose coherence where none exists
+        </dont>
+      </practice>
+      
+      <practice category="Working with Categories">
+        <do>
+          - Use multiple codes when topics genuinely intersect
+          - Let ambiguity stand when it exists
+          - Note in narratives when categories don't quite fit
+          - Prioritize participant's framing over schema fit
+        </do>
+        <dont>
+          - Force every statement into a category
+          - Use only one code when multiple apply
+          - Create false precision with unclear cases
+          - Ignore content that doesn't fit the schema
+        </dont>
+      </practice>
+      
+      <practice category="Writing Narratives">
+        <do>
+          - Ground every interpretation in specific quotes
+          - Capture the emotional texture of their speech
+          - Note rhetorical strategies and cultural references
+          - Connect individual statements to larger patterns
+          - Use their metaphors and imagery
+        </do>
+        <dont>
+          - Write generic summaries that could apply to anyone
+          - Use academic jargon that obscures meaning
+          - Make interpretive leaps without evidence
+          - Flatten complex emotions into simple categories
+          - Ignore contradictions or tensions
+        </dont>
+      </practice>
+      
+      <practice category="Cultural Sensitivity">
+        <do>
+          - Research local context if unfamiliar
+          - Note when local knowledge would help interpretation
+          - Respect different ways of expressing concerns
+          - Recognize that indirection can be meaningful
+        </do>
+        <dont>
+          - Judge sophistication by urban/educated standards
+          - Assume lack of specificity means lack of knowledge
+          - Overlook local meanings of national issues
+          - Standardize diverse expressions into bland categories
+        </dont>
+      </practice>
+      
+    </best_practices>
+    
+    <guiding_examples>
+      
+      <example type="Complete Turn Annotation">
+        <context>
+          Interview: San Javier Cultural Center Director
+          Turn: Discussion of youth and drugs
+        </context>
+        
+        <original_text>
+          "Dentro de la primera parte pusimos trabajo, la seguridad, que se controle más el tema de 
+          droga, que lamentablemente acá que es un pueblo chico, se está viendo mucho en la 
+          juventud, se está echando a perder eso ¿no?"
+        </original_text>
+        
+        <annotation>
+          <functional_annotation>
+            <primary_function>problem_identification</primary_function>
+            <secondary_functions>[evaluation]</secondary_functions>
+            <function_narrative>
+              Introduces security concerns by immediately linking to drugs and youth, 
+              establishing a causal chain that will recur throughout interview. The tag 
+              question "¿no?" seeks validation for this framing.
+            </function_narrative>
+          </functional_annotation>
+          
+          <content_annotation>
+            <topics>[security, drugs, youth, social_issues]</topics>
+            <topic_narrative>
+              Weaves together security and youth concerns through drugs as connecting thread. 
+              "Lamentablemente" signals this as deterioration narrative. Emphasizes local 
+              specificity ("pueblo chico") while implying this violates expectations for 
+              small towns.
+            </topic_narrative>
+            <geographic_scope>[local]</geographic_scope>
+            <geographic_narrative>
+              Positions San Javier's small-town identity as making drug problem particularly 
+              painful - not just a problem, but a violation of what small towns should be.
+            </geographic_narrative>
+            <temporal_reference>present</temporal_reference>
+          </content_annotation>
+          
+          <evidence_annotation>
+            <evidence_type>community_observation</evidence_type>
+            <evidence_narrative>
+              Presents as shared community knowledge ("se está viendo mucho"), using 
+              impersonal construction to claim obviousness rather than citing specific examples.
+            </evidence_narrative>
+            <specificity>general</specificity>
+          </evidence_annotation>
+          
+          <stance_annotation>
+            <emotional_valence>negative</emotional_valence>
+            <emotional_intensity>0.7</emotional_intensity>
+            <specific_emotions>[concern, disappointment, fear]</specific_emotions>
+            <emotional_narrative>
+              "Lamentablemente" sets tone of sorrow rather than anger. "Se está echando a 
+              perder" conveys ongoing decay with implicit helplessness. Youth framed as 
+              victims ("la juventud") rather than perpetrators.
+            </emotional_narrative>
+            <certainty>very_certain</certainty>
+            <rhetorical_features>
+              Uses deterioration metaphor ("echando a perder" - spoiling/ruining), 
+              passive voice to avoid blame, diminutive "pueblo chico" to emphasize 
+              vulnerability.
+            </rhetorical_features>
+          </stance_annotation>
+          
+          <turn_narrative_summary>
+            Establishes drugs as threat to youth and community identity simultaneously. 
+            The small-town setting intensifies the violation - this shouldn't happen here. 
+            Positions speaker as concerned community member witnessing decay.
+          </turn_narrative_summary>
+          
+          <turn_significance>
+            Key early framing that explains why security is top priority - not abstract 
+            concern but visceral fear of losing the next generation and community character.
+          </turn_significance>
+        </annotation>
+      </example>
+      
+      <example type="Priority Narrative Comparison">
+        <context>Showing different quality levels for same content</context>
+        
+        <insufficient>
+          <priority rank="1">
+            <theme>Security</theme>
+            <specific_issues>[drugs, crime]</specific_issues>
+            <narrative_elaboration>
+              Participant is worried about security, especially drugs affecting young people.
+              Wants more police control.
+            </narrative_elaboration>
+          </priority>
+        </insufficient>
+        
+        <good>
+          <priority rank="1">
+            <theme>Security</theme>
+            <specific_issues>[drug trafficking, youth vulnerability, police presence]</specific_issues>
+            <narrative_elaboration>
+              Frames security through protective lens - less about personal safety than 
+              community dissolution. Repeatedly returns to image of youth "being lost" 
+              ("se está perdiendo la juventud") to drugs, with small-town setting 
+              intensifying the tragedy. Solutions center on "más control" but acknowledges 
+              not knowing how ("es difícil dar una opinión"). Ties to broader narrative 
+              of abandonment - youth leave for opportunities, but drugs capture those who stay.
+            </narrative_elaboration>
+          </priority>
+        </good>
+        
+        <excellent>
+          <priority rank="1">
+            <theme>Security</theme>
+            <specific_issues>[drug trafficking, youth vulnerability, police presence, community decay]</specific_issues>
+            <narrative_elaboration>
+              Security emerges not as fear of crime but as grief over generational loss. 
+              "Se nos está perdiendo la juventud" becomes refrain, with possessive "nos" 
+              claiming collective ownership of young people's fate. Drugs violate the 
+              imagined safety of "pueblo chico," making San Javier's size a vulnerability 
+              rather than protection. Her solutions ("más control") feel gestural against 
+              the enormity of loss - she admits "es difícil dar una opinión" when pressed 
+              for specifics. This isn't policy preference but communal mourning. The 
+              security crisis interweaves with every other concern: youth who aren't lost 
+              to drugs leave for education (never returning), families dissolve, cultural 
+              transmission breaks. "Control" becomes plea for any intervention to stop 
+              the hemorrhaging of community future.
+            </narrative_elaboration>
+          </priority>
+        </excellent>
+      </example>
+      
+      <example type="Common Annotation Errors">
+        
+        <error type="Over-categorization">
+          <wrong>
+            Topics: [employment, wages, youth, economic_development, education, migration, 
+                     culture, family, social_issues]
+          </wrong>
+          <right>
+            Topics: [employment, youth]
+            Topic_narrative: "Links youth unemployment to broader pattern of forced migration 
+                             for education/work, touching on cultural and family impacts but 
+                             focusing primarily on lack of local opportunities."
+          </right>
+          <explanation>
+            Don't code every mentioned concept. Focus on substantive themes and use narrative 
+            to note connections to other issues.
+          </explanation>
+        </error>
+        
+        <error type="Imposing Coherence">
+          <wrong>
+            "Participant systematically argues that government should balance public and 
+            private sector involvement in services."
+          </wrong>
+          <right>
+            "Defends public services ('hay que fortalecer las empresas públicas') while 
+            simultaneously seeking private options for healthcare. This tension remains 
+            unresolved - perhaps reflecting pragmatic adaptation to service failures rather 
+            than ideological position."
+          </right>
+          <explanation>
+            Don't smooth over contradictions. Real people hold competing views.
+          </explanation>
+        </error>
+        
+        <error type="Academic Overlay">
+          <wrong>
+            "Participant exhibits neoliberal subjectivity in advocating for market solutions 
+            while demonstrating nostalgia for welfare state provisions."
+          </wrong>
+          <right>
+            "Caught between defending what 'should be ours' (public services) and seeking 
+            whatever works (private clinics), especially for urgent health needs. The phrase 
+            'nos merecemos' (we deserve) suggests rights-based view of public services even 
+            as she pursues private alternatives."
+          </right>
+          <explanation>
+            Use accessible language that stays close to participant's own concepts.
+          </explanation>
+        </error>
+        
+      </example>
+      
+      <example type="Handling Ambiguity">
+        <context>
+          Participant discusses education decline but gives contradictory evidence
+        </context>
+        
+        <annotation>
+          <certainty>ambivalent</certainty>
+          <turn_narrative_summary>
+            Asserts education has declined while acknowledging "tal vez por ahí uno esté 
+            equivocado." Grounds claim in maternal experience comparing daughters' educations, 
+            but hedges repeatedly. This uncertainty doesn't undermine her concern - rather 
+            suggests struggle to validate lived experience against possible accusations of 
+            nostalgia or ignorance.
+          </turn_narrative_summary>
+          <analytical_note>
+            Note how rural participants often preface critiques with acknowledgment they 
+            might be wrong - defensive positioning suggesting expectation of dismissal.
+          </analytical_note>
+        </annotation>
+      </example>
+      
+      <example type="Uncertainty Documentation">
+        <turn_text>
+          "El tema que, digo, es fácil decirlo, más control, pero, digo, uno al no saber 
+          cómo hacerlo, al no estar directamente, yo soy muy antipolítica, digamos, pero 
+          al no estar directamente trabajando cerca, es difícil dar una opinión."
+        </turn_text>
+        
+        <uncertainty_documentation>
+          <coding_confidence>0.6</coding_confidence>
+          <ambiguous_function>true</ambiguous_function>
+          <function_alternatives>[solution_proposal, meta_commentary]</function_alternatives>
+          
+          <edge_case_details>
+            <challenge>
+              Participant simultaneously proposes solution ("más control") while 
+              undermining their own authority to propose it. Is this primarily 
+              a weak solution proposal or meta-commentary on citizen expertise?
+            </challenge>
+            
+            <competing_interpretations>
+              <interpretation>
+                <codes>primary_function: solution_proposal</codes>
+                <rationale>
+                  Does ultimately suggest "más control" as solution, with caveats
+                  about implementation difficulty
+                </rationale>
+                <confidence>0.6</confidence>
+              </interpretation>
+              
+              <interpretation>
+                <codes>primary_function: meta_commentary</codes>
+                <rationale>
+                  Focus seems to be on positioning herself as unqualified to 
+                  offer solutions due to being "antipolítica" and distant from power
+                </rationale>
+                <confidence>0.4</confidence>
+              </interpretation>
+            </competing_interpretations>
+            
+            <resolution_strategy>participant_framing_privileged</resolution_strategy>
+          </edge_case_details>
+          
+          <annotator_notes>
+            This turn exemplifies a pattern where rural participants simultaneously 
+            offer and retract opinions, possibly reflecting power dynamics in 
+            interview situation or broader political marginalization.
+          </annotator_notes>
+        </uncertainty_documentation>
+      </example>
+      
+    </guiding_examples>
+    
+    <annotation_workshop>
+      <exercise n="1">
+        <task>
+          Practice identifying primary vs. secondary functions using this excerpt:
+          "Seguridad y sí, porque yo creo que la droga acarrea todo lo que pasa después, 
+          ¿no? Todos los días vemos impresionantemente cómo se están matando la gente."
+        </task>
+        <guidance>
+          Consider: Is this problem identification, elaboration, or justification? 
+          How does the causal claim ("acarrea todo") affect your coding?
+        </guidance>
+      </exercise>
+      
+      <exercise n="2">
+        <task>
+          Write three different emotional narratives for the same turn, varying in quality
+        </task>
+        <guidance>
+          Show progression from simple labeling to rich emotional texture
+        </guidance>
+      </exercise>
+      
+      <exercise n="3">
+        <task>
+          Identify all geographic scales in discussion of healthcare access to Paysandú vs. Fray Bentos
+        </task>
+        <guidance>
+          Note how administrative boundaries conflict with lived geography
+        </guidance>
+      </exercise>
+    </annotation_workshop>
+    
+  </best_practices_and_examples>
+  
+  <!-- UNCERTAINTY GUIDANCE -->
+  <uncertainty_guidance>
+    
+    <when_to_flag>
+      <situation>
+        When you spend more than 30 seconds deciding between categories
+      </situation>
+      <situation>
+        When participant's meaning could be reasonably interpreted in contradictory ways
+      </situation>
+      <situation>
+        When local/cultural knowledge would significantly change interpretation
+      </situation>
+      <situation>
+        When you find yourself writing "possibly" or "perhaps" in narratives
+      </situation>
+      <situation>
+        When tone and content seem misaligned
+      </situation>
+    </when_to_flag>
+    
+    <confidence_scale>
+      <level value="0.9-1.0">
+        Clear, unambiguous coding. Would expect high inter-rater agreement.
+      </level>
+      <level value="0.7-0.8">
+        Reasonably confident but acknowledge other coders might differ.
+      </level>
+      <level value="0.5-0.6">
+        Significant uncertainty. Multiple valid interpretations exist.
+      </level>
+      <level value="0.0-0.4">
+        Low confidence. Coding forced by schema but doesn't capture meaning well.
+      </level>
+    </confidence_scale>
+    
+    <edge_case_strategies>
+      <strategy name="Document Don't Resolve">
+        Your job isn't to eliminate ambiguity but to document it faithfully.
+        Use competing_interpretations to show multiple valid readings.
+      </strategy>
+      
+      <strategy name="Context Clues">
+        Look to surrounding turns for clarification, but note when you do this
+        in the resolution_strategy field.
+      </strategy>
+      
+      <strategy name="Participant Privilege">
+        When genuinely ambiguous, lean toward participant's apparent framing
+        rather than imposing external coherence.
+      </strategy>
+      
+      <strategy name="Flag for Discussion">
+        Some edge cases reveal schema limitations or need team consensus.
+        Flag these rather than making arbitrary decisions.
+      </strategy>
+    </edge_case_strategies>
+    
+  </uncertainty_guidance>
+  
+  <!-- CODING GUIDELINES -->
+  <coding_guidelines>
+    <general_principles>
+      <principle>Balance systematic coding with interpretive richness</principle>
+      <principle>Use narrative fields to capture nuance that categories miss</principle>
+      <principle>Connect micro (turn) and macro (interview) levels explicitly</principle>
+      <principle>Preserve participant's voice while adding analytical value</principle>
+    </general_principles>
+    
+    <narrative_guidelines>
+      <guideline>Write in present tense when describing what participant does</guideline>
+      <guideline>Quote key phrases to support interpretations</guideline>
+      <guideline>Note metaphors, stories, and cultural references</guideline>
+      <guideline>Describe not just what they say but how they say it</guideline>
+      <guideline>Connect individual statements to broader patterns</guideline>
+    </narrative_guidelines>
+    
+    <quality_checks>
+      <check>Do narrative descriptions align with categorical codes?</check>
+      <check>Are interpretations grounded in textual evidence?</check>
+      <check>Have you captured the participant's own framing?</check>
+      <check>Do turn-level narratives build toward interview-level insights?</check>
+      <check>Have I flagged all turns where I hesitated between codes?</check>
+      <check>Do my confidence scores align with my uncertainty narratives?</check>
+      <check>Have I documented alternative interpretations for edge cases?</check>
+      <check>Are my resolution strategies consistent across similar cases?</check>
+      <check>Have I noted where additional context would change coding?</check>
+      <check>Did I resist false certainty when ambiguity is genuine?</check>
+    </quality_checks>
+  </coding_guidelines>
+  
+</annotation_schema>
