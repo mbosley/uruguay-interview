@@ -25,10 +25,6 @@ PROMPTS_DIR = CONFIG_DIR / "prompts"
 DATABASE_CONFIG_DIR = CONFIG_DIR / "database"
 DASHBOARD_CONFIG_DIR = CONFIG_DIR / "dashboards"
 
-# Default prompt versions
-DEFAULT_ANNOTATION_PROMPT = "annotation_prompt_v1.xml"
-DEFAULT_FOLLOWUP_PROMPT = "followup_prompts.yaml"
-
 @dataclass
 class APIConfig:
     """API configuration for external services."""
@@ -73,6 +69,10 @@ class ResearchConfig:
 
 class Config:
     """Main configuration class."""
+    
+    # Default file names
+    DEFAULT_ANNOTATION_PROMPT = "annotation_prompt_v1.xml"
+    DEFAULT_FOLLOWUP_PROMPT = "followup_prompts.yaml"
     
     def __init__(self):
         self.api = APIConfig()
