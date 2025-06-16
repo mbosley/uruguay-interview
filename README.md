@@ -2,6 +2,14 @@
 
 An advanced AI framework for analyzing citizen consultation interviews at scale, developed for the Uruguay Government's 5-year active listening initiative. This system processes qualitative interviews through sophisticated annotation pipelines, enabling both real-time policy insights and groundbreaking academic research.
 
+## 📑 Quick Links
+
+**Core Documentation:**
+[📋 Master Roadmap](docs/roadmap/PROJECT_ROADMAP.md) | [🤖 Annotation Framework](docs/roadmap/ANNOTATION_FRAMEWORK_ROADMAP.md) | [💬 WhatsApp AI](docs/roadmap/WHATSAPP_AI_FOLLOWUP_ROADMAP.md) | [👥 Digital Twins](docs/roadmap/DIGITAL_TWIN_RESEARCH_ROADMAP.md) | [📊 Quantitative Insights](docs/roadmap/QUANTITATIVE_INSIGHTS_FRAMEWORK.md)
+
+**Development:**
+[💻 Dev Guidelines](CLAUDE.md) | [⚙️ Configuration](config/settings.py) | [📝 Annotation Schema](config/prompts/annotation_prompt_v1.xml)
+
 ## 🎯 Project Overview
 
 This framework addresses the challenge of analyzing 5000+ citizen interviews over 5 years, transforming rich qualitative data into actionable policy insights while preserving the authenticity of citizen voices.
@@ -138,12 +146,28 @@ dashboard.export("deliverables/government/dashboards/executive.html")
 - API keys stored in environment variables
 - Encrypted data transmission for WhatsApp integration
 
-## 📚 Documentation
+## 📚 Documentation Index
 
-- [Project Roadmap](docs/roadmap/PROJECT_ROADMAP.md)
-- [Quantitative Insights Framework](docs/roadmap/QUANTITATIVE_INSIGHTS_FRAMEWORK.md)
-- [Technical Architecture](docs/technical/architecture.md)
-- [Training Materials](docs/training/)
+### 🗺️ Project Roadmaps
+- **[Master Project Roadmap](docs/roadmap/PROJECT_ROADMAP.md)** - Complete project overview, timeline, and training framework
+- **[AI Annotation Framework Roadmap](docs/roadmap/ANNOTATION_FRAMEWORK_ROADMAP.md)** - Core annotation engine development plan
+- **[WhatsApp AI Follow-up Roadmap](docs/roadmap/WHATSAPP_AI_FOLLOWUP_ROADMAP.md)** - Conversational AI system for continuous engagement
+- **[Digital Twin Research Roadmap](docs/roadmap/DIGITAL_TWIN_RESEARCH_ROADMAP.md)** - Individual political reasoning models
+
+### 📊 Frameworks & Methodologies
+- **[Quantitative Insights Framework](docs/roadmap/QUANTITATIVE_INSIGHTS_FRAMEWORK.md)** - From SQL tables to policy insights
+- **[Annotation Schema](config/prompts/annotation_prompt_v1.xml)** - Detailed XML schema for interview annotation
+
+### 🛠️ Technical Documentation
+- **[Configuration Guide](config/settings.py)** - System configuration and settings
+- **[Technical Architecture](docs/technical/architecture.md)** - System design and components *(coming soon)*
+- **[API Documentation](docs/technical/api.md)** - API endpoints and usage *(coming soon)*
+- **[Deployment Guide](docs/technical/deployment.md)** - Production deployment instructions *(coming soon)*
+
+### 📖 Development Resources
+- **[Development Guidelines](CLAUDE.md)** - Git workflow, coding standards, and best practices
+- **[Training Materials](docs/training/)** - Capacity building curriculum *(coming soon)*
+- **[Research Methodology](docs/research/methodology.md)** - Academic research approaches *(coming soon)*
 
 ## 🤝 Contributing
 
