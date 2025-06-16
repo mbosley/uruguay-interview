@@ -1,7 +1,8 @@
 # Sensitive interview data - NEVER commit
 data/raw/
-data/processed/interviews_txt/
-data/processed/annotations/
+data/processed/
+data/cache/
+data/exports/
 
 # Interview file formats
 *.docx
