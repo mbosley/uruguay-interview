@@ -21,7 +21,7 @@ Based on your feedback that XML outputs produce richer quality than JSON, we've 
    - Extracts key data points for downstream processing
 
 2. **AnnotationEngine** (`src/pipeline/annotation/annotation_engine.py`)
-   - Supports both OpenAI and Anthropic models
+   - Supports OpenAI, Anthropic, and Google Gemini models
    - Handles API calls with retry logic
    - Validates annotations against schema
    - Adds processing metadata

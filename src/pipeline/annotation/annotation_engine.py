@@ -10,9 +10,11 @@ import time
 
 from openai import OpenAI
 from anthropic import Anthropic
+import google.generativeai as genai
 
 from src.pipeline.ingestion.document_processor import InterviewDocument
 from src.pipeline.annotation.prompt_manager import PromptManager
+from src.config.config_loader import get_config
 
 logger = logging.getLogger(__name__)
 
@@ -23,49 +25,73 @@ class AnnotationEngine:
     def __init__(
         self, 
         prompt_manager: Optional[PromptManager] = None,
-        model_provider: str = "openai",
-        model_name: Optional[str] = None
+        model_provider: Optional[str] = None,
+        model_name: Optional[str] = None,
+        config = None
     ):
         """
         Initialize annotation engine.
         
         Args:
             prompt_manager: PromptManager instance (creates default if None)
-            model_provider: 'openai' or 'anthropic'
-            model_name: Specific model to use (defaults to best available)
+            model_provider: 'openai', 'anthropic', or 'gemini' (overrides config)
+            model_name: Specific model to use (overrides config)
+            config: Configuration object (uses global config if None)
         """
-        self.prompt_manager = prompt_manager or PromptManager()
-        self.model_provider = model_provider.lower()
+        # Load configuration
+        self.config = config or get_config()
+        
+        # Use provided values or fall back to config
+        self.model_provider = (model_provider or self.config.ai.provider).lower()
+        self.model_name = model_name or self.config.ai.model
+        
+        # Initialize prompt manager
+        self.prompt_manager = prompt_manager or PromptManager(
+            prompt_file=self.config.annotation.prompt_file
+        )
+        
+        # Get API key from config loader
+        from src.config.config_loader import ConfigLoader
+        loader = ConfigLoader()
+        api_key = loader.get_api_key(self.model_provider)
+        
+        if not api_key:
+            raise ValueError(f"No API key found for provider: {self.model_provider}")
         
         # Initialize AI client
         if self.model_provider == "openai":
-            self.client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-            self.model_name = model_name or "gpt-4-turbo-preview"
+            self.client = OpenAI(api_key=api_key)
         elif self.model_provider == "anthropic":
-            self.client = Anthropic(api_key=os.getenv("ANTHROPIC_API_KEY"))
-            self.model_name = model_name or "claude-3-opus-20240229"
+            self.client = Anthropic(api_key=api_key)
+        elif self.model_provider == "gemini":
+            genai.configure(api_key=api_key)
+            self.client = None  # Gemini uses module-level functions
         else:
-            raise ValueError(f"Unsupported model provider: {model_provider}")
+            raise ValueError(f"Unsupported model provider: {self.model_provider}")
         
         logger.info(f"Initialized {self.model_provider} annotation engine with model {self.model_name}")
     
     def annotate_interview(
         self, 
         interview: InterviewDocument,
-        max_retries: int = 3,
-        temperature: float = 0.3
+        max_retries: Optional[int] = None,
+        temperature: Optional[float] = None
     ) -> Tuple[ET.Element, Dict[str, Any]]:
         """
         Generate AI annotation for an interview.
         
         Args:
             interview: Processed interview document
-            max_retries: Maximum retry attempts on failure
-            temperature: AI temperature setting (0-1)
+            max_retries: Maximum retry attempts (uses config default if None)
+            temperature: AI temperature setting (uses config default if None)
             
         Returns:
             Tuple of (XML annotation, processing metadata)
         """
+        # Use config defaults if not specified
+        max_retries = max_retries or self.config.ai.max_retries
+        temperature = temperature or self.config.ai.temperature
+        
         start_time = time.time()
         
         # Create annotation prompt
@@ -93,8 +119,10 @@ class AnnotationEngine:
                 # Call appropriate AI provider
                 if self.model_provider == "openai":
                     annotation_xml = self._call_openai(prompt, temperature)
-                else:
+                elif self.model_provider == "anthropic":
                     annotation_xml = self._call_anthropic(prompt, temperature)
+                else:
+                    annotation_xml = self._call_gemini(prompt, temperature)
                 
                 # Parse and validate
                 annotation = self.prompt_manager.parse_annotation_response(annotation_xml)
@@ -172,6 +200,26 @@ class AnnotationEngine:
         )
         
         return response.content[0].text
+    
+    def _call_gemini(self, prompt: str, temperature: float) -> str:
+        """Call Google Gemini API for annotation."""
+        model = genai.GenerativeModel(
+            self.model_name,
+            system_instruction="You are an expert qualitative researcher specializing in citizen consultations. You follow annotation schemas precisely and output valid XML."
+        )
+        
+        # Configure generation settings
+        generation_config = genai.GenerationConfig(
+            temperature=temperature,
+            max_output_tokens=8000,
+        )
+        
+        response = model.generate_content(
+            prompt,
+            generation_config=generation_config
+        )
+        
+        return response.text
     
     def _create_correction_prompt(self, original_prompt: str, errors: List[str]) -> str:
         """Create a prompt to correct validation errors."""
@@ -265,13 +313,32 @@ Please provide a corrected annotation that addresses these errors.
         
         costs = {}
         
-        # OpenAI pricing (GPT-4 Turbo)
-        costs["openai_gpt4"] = {
+        # OpenAI pricing (multiple models) - prices per 1M tokens
+        # GPT-4o (most capable general model)
+        costs["openai_gpt4o"] = {
             "prompt_tokens": prompt_tokens,
             "output_tokens": output_tokens,
-            "prompt_cost": (prompt_tokens / 1000) * 0.01,  # $0.01 per 1K tokens
-            "output_cost": (output_tokens / 1000) * 0.03,  # $0.03 per 1K tokens
-            "total_cost": ((prompt_tokens / 1000) * 0.01) + ((output_tokens / 1000) * 0.03)
+            "prompt_cost": (prompt_tokens / 1_000_000) * 2.50,  # $2.50 per 1M tokens
+            "output_cost": (output_tokens / 1_000_000) * 10.00,  # $10.00 per 1M tokens
+            "total_cost": ((prompt_tokens / 1_000_000) * 2.50) + ((output_tokens / 1_000_000) * 10.00)
+        }
+        
+        # GPT-4o-mini (cost-effective)
+        costs["openai_gpt4o_mini"] = {
+            "prompt_tokens": prompt_tokens,
+            "output_tokens": output_tokens,
+            "prompt_cost": (prompt_tokens / 1_000_000) * 0.15,  # $0.15 per 1M tokens
+            "output_cost": (output_tokens / 1_000_000) * 0.60,  # $0.60 per 1M tokens
+            "total_cost": ((prompt_tokens / 1_000_000) * 0.15) + ((output_tokens / 1_000_000) * 0.60)
+        }
+        
+        # GPT-4.1-nano (cheapest)
+        costs["openai_gpt41_nano"] = {
+            "prompt_tokens": prompt_tokens,
+            "output_tokens": output_tokens,
+            "prompt_cost": (prompt_tokens / 1_000_000) * 0.10,  # $0.10 per 1M tokens
+            "output_cost": (output_tokens / 1_000_000) * 0.40,  # $0.40 per 1M tokens
+            "total_cost": ((prompt_tokens / 1_000_000) * 0.10) + ((output_tokens / 1_000_000) * 0.40)
         }
         
         # Anthropic pricing (Claude 3 Opus)
@@ -281,6 +348,35 @@ Please provide a corrected annotation that addresses these errors.
             "prompt_cost": (prompt_tokens / 1000) * 0.015,  # $0.015 per 1K tokens
             "output_cost": (output_tokens / 1000) * 0.075,  # $0.075 per 1K tokens
             "total_cost": ((prompt_tokens / 1000) * 0.015) + ((output_tokens / 1000) * 0.075)
+        }
+        
+        # Google Gemini pricing (multiple models)
+        # Gemini 2.0 Flash - Most cost-effective
+        costs["gemini_20_flash"] = {
+            "prompt_tokens": prompt_tokens,
+            "output_tokens": output_tokens,
+            "prompt_cost": (prompt_tokens / 1_000_000) * 0.10,  # $0.10 per 1M tokens
+            "output_cost": (output_tokens / 1_000_000) * 0.40,  # $0.40 per 1M tokens
+            "total_cost": ((prompt_tokens / 1_000_000) * 0.10) + ((output_tokens / 1_000_000) * 0.40)
+        }
+        
+        # Gemini 2.5 Flash Preview - Free tier available
+        costs["gemini_25_flash_preview"] = {
+            "prompt_tokens": prompt_tokens,
+            "output_tokens": output_tokens,
+            "prompt_cost": (prompt_tokens / 1_000_000) * 0.15,  # $0.15 per 1M tokens
+            "output_cost": (output_tokens / 1_000_000) * 0.60,  # $0.60 per 1M tokens (base rate)
+            "total_cost": ((prompt_tokens / 1_000_000) * 0.15) + ((output_tokens / 1_000_000) * 0.60),
+            "note": "Free tier available in Google AI Studio"
+        }
+        
+        # Gemini 1.5 Pro - Higher context window (2M tokens)
+        costs["gemini_15_pro"] = {
+            "prompt_tokens": prompt_tokens,
+            "output_tokens": output_tokens,
+            "prompt_cost": (prompt_tokens / 1_000_000) * 1.25,  # $1.25 per 1M tokens (base rate)
+            "output_cost": (output_tokens / 1_000_000) * 5.00,  # $5.00 per 1M tokens (base rate)
+            "total_cost": ((prompt_tokens / 1_000_000) * 1.25) + ((output_tokens / 1_000_000) * 5.00)
         }
         
         return costs

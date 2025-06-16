@@ -1,0 +1,146 @@
+# Uruguay Interview Analysis Configuration
+# This file configures the entire pipeline from document processing to dashboard generation
+
+# AI Model Configuration
+ai:
+  # Provider options: openai, anthropic, gemini
+  provider: gemini
+  
+  # Model name (provider-specific)
+  # OpenAI: gpt-4.1-nano, gpt-4o-mini, gpt-4o
+  # Anthropic: claude-3-opus-20240229, claude-3-sonnet-20240229
+  # Gemini: gemini-2.0-flash, gemini-2.5-flash-preview, gemini-1.5-pro
+  model: gemini-2.0-flash
+  
+  # Generation parameters
+  temperature: 0.3
+  max_retries: 3
+  
+  # Batch processing
+  batch_size: 10
+  max_concurrent: 1  # Concurrent API calls (increase with caution)
+
+# Document Processing
+processing:
+  # Input/output directories
+  input_dir: data/raw/interviews
+  output_dir: data/processed
+  
+  # File handling
+  supported_formats: [txt, docx, odt]
+  encoding: utf-8
+  
+  # Text processing
+  min_interview_length: 100  # Minimum words
+  max_interview_length: 50000  # Maximum words
+
+# Annotation Configuration
+annotation:
+  # Schema configuration
+  prompt_version: v1
+  prompt_file: config/prompts/annotation_prompt_v1.xml
+  
+  # Validation
+  require_all_sections: true
+  min_confidence_score: 0.7
+  
+  # Output format
+  save_xml: true
+  save_json: true
+  include_metadata: true
+
+# Database Configuration
+database:
+  # Connection settings (overridden by DATABASE_URL env var)
+  host: localhost
+  port: 5432
+  name: uruguay_interviews
+  user: postgres
+  
+  # Schema settings
+  schema: public
+  
+  # Performance
+  pool_size: 10
+  echo: false  # SQL logging
+
+# Dashboard Configuration
+dashboard:
+  # Server settings
+  host: 0.0.0.0
+  port: 8501
+  
+  # UI Configuration
+  theme: light
+  show_raw_data: false
+  enable_export: true
+  
+  # Visualization defaults
+  charts:
+    color_scheme: viridis
+    default_height: 400
+
+# Quality Control
+quality:
+  # Validation thresholds
+  min_annotation_completeness: 0.8
+  flag_low_confidence: true
+  
+  # Sampling for manual review
+  review_sample_rate: 0.1  # 10% manual review
+  
+  # Hallucination detection
+  check_factual_consistency: true
+  cross_reference_responses: true
+
+# Monitoring and Logging
+monitoring:
+  # Logging configuration
+  log_level: INFO  # DEBUG, INFO, WARNING, ERROR
+  log_file: logs/pipeline.log
+  
+  # Metrics tracking
+  track_costs: true
+  track_performance: true
+  
+  # Alerts
+  alert_on_errors: true
+  alert_threshold: 5  # errors per hour
+
+# WhatsApp Integration (Phase 2)
+whatsapp:
+  enabled: false
+  
+  # Message handling
+  response_delay: 2  # seconds
+  max_message_length: 4096
+  
+  # Follow-up settings
+  follow_up_interval: 7  # days
+  max_follow_ups: 3
+
+# Development Settings
+development:
+  # Debug mode
+  debug: false
+  
+  # Test mode (uses smaller models/samples)
+  test_mode: false
+  test_sample_size: 5
+  
+  # Caching
+  enable_cache: true
+  cache_ttl: 3600  # seconds
+
+# Cost Management
+cost_management:
+  # Budget limits (USD)
+  daily_limit: 10.0
+  monthly_limit: 200.0
+  
+  # Cost optimization
+  prefer_cached_results: true
+  use_cheapest_model: false  # Override model selection
+  
+  # Alerts
+  alert_at_percentage: 80  # Alert at 80% of budget

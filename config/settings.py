@@ -30,6 +30,7 @@ class APIConfig:
     """API configuration for external services."""
     openai_api_key: str = os.environ.get("OPENAI_API_KEY", "")
     anthropic_api_key: str = os.environ.get("ANTHROPIC_API_KEY", "")
+    google_api_key: str = os.environ.get("GOOGLE_API_KEY", "")
     whatsapp_api_key: str = os.environ.get("WHATSAPP_API_KEY", "")
     whatsapp_phone_id: str = os.environ.get("WHATSAPP_PHONE_ID", "")
 

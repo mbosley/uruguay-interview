@@ -16,10 +16,15 @@ logger = logging.getLogger(__name__)
 class PromptManager:
     """Manages prompts and schemas for AI annotation using XML."""
     
-    def __init__(self, schema_path: Optional[Path] = None):
+    def __init__(self, schema_path: Optional[Path] = None, prompt_file: Optional[str] = None):
         """Initialize prompt manager with annotation schema."""
         if schema_path is None:
-            schema_path = config.get_prompt_path(config.DEFAULT_ANNOTATION_PROMPT)
+            if prompt_file:
+                # Use prompt file from config
+                schema_path = Path(prompt_file)
+            else:
+                # Fall back to default
+                schema_path = config.get_prompt_path(config.DEFAULT_ANNOTATION_PROMPT)
         
         self.schema_path = schema_path
         self.schema_tree = self._load_schema()

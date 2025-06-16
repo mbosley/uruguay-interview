@@ -8,7 +8,7 @@ An advanced AI framework for analyzing citizen consultation interviews at scale,
 [📋 Master Roadmap](docs/roadmap/PROJECT_ROADMAP.md) | [🤖 Annotation Framework](docs/roadmap/ANNOTATION_FRAMEWORK_ROADMAP.md) | [💬 WhatsApp AI](docs/roadmap/WHATSAPP_AI_FOLLOWUP_ROADMAP.md) | [👥 Digital Twins](docs/roadmap/DIGITAL_TWIN_RESEARCH_ROADMAP.md) | [📊 Quantitative Insights](docs/roadmap/QUANTITATIVE_INSIGHTS_FRAMEWORK.md)
 
 **Development:**
-[💻 Dev Guidelines](CLAUDE.md) | [⚙️ Configuration](config/settings.py) | [📝 Annotation Schema](config/prompts/annotation_prompt_v1.xml)
+[💻 Dev Guidelines](CLAUDE.md) | [⚙️ Configuration](docs/CONFIGURATION.md) | [📝 Annotation Schema](config/prompts/annotation_prompt_v1.xml)
 
 ## 🎯 Project Overview
 
@@ -51,26 +51,43 @@ pip install -e .
 
 # Copy environment variables
 cp .env.example .env
-# Edit .env with your API keys and configuration
+# Edit .env with your API keys
+
+# Configure the pipeline (optional - defaults work out of box)
+# Edit config.yaml to set your preferred AI provider and settings
 ```
+
+### Configuration
+
+The project uses a centralized configuration system:
+
+```yaml
+# config.yaml
+ai:
+  provider: gemini              # Options: openai, anthropic, gemini
+  model: gemini-2.0-flash      # Cheapest option at $0.000875/interview
+  temperature: 0.3
+```
+
+See [Configuration Guide](docs/CONFIGURATION.md) for detailed settings.
 
 ### Basic Usage
 
 ```bash
-# Convert interview documents to text
-python scripts/convert_interviews.sh
+# Show current configuration
+python -m src.cli.annotate info
 
-# Run annotation pipeline on a single interview
-uruguay-pipeline --interview data/raw/interviews/interview_001.docx
+# Annotate a single interview
+python -m src.cli.annotate annotate data/processed/interviews_txt/20250528_0900_058.txt
 
 # Batch process multiple interviews
-uruguay-batch --input-dir data/raw/interviews --output-dir data/processed/annotations
+python -m src.cli.annotate batch --limit 10
 
-# Check annotation quality
-uruguay-quality --annotations-dir data/processed/annotations
+# Compare costs across providers
+python -m src.cli.annotate costs
 
-# Generate dashboards
-uruguay-export --type dashboard --output deliverables/government/dashboards
+# Use different AI provider
+python -m src.cli.annotate annotate interview.txt --provider openai --model gpt-4o-mini
 ```
 
 ## 📁 Project Structure
