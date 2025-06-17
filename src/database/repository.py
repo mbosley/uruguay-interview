@@ -11,9 +11,10 @@ from sqlalchemy import func, and_, or_
 from src.database.models import (
     Interview, Annotation, Priority, Emotion, Theme,
     Concern, Suggestion, GeographicMention, DemographicIndicator,
-    ProcessingLog, DailySummary
+    ProcessingLog, DailySummary, Turn
 )
 from src.pipeline.extraction.data_extractor import ExtractedData
+from src.pipeline.parsing.conversation_parser import ConversationParser
 
 logger = logging.getLogger(__name__)
 
@@ -21,8 +22,10 @@ logger = logging.getLogger(__name__)
 class InterviewRepository:
     """Repository for interview-related database operations."""
     
-    def __init__(self, session: Session):
-        self.session = session
+    def __init__(self, db_connection=None):
+        """Initialize repository with optional database connection."""
+        self.db_connection = db_connection
+        self.session = None
     
     def create_interview(self, interview_data: Dict[str, Any]) -> Interview:
         """Create a new interview record."""
@@ -75,6 +78,17 @@ class InterviewRepository:
         return self.session.query(Interview).filter(
             Interview.location == location
         ).order_by(Interview.date).all()
+    
+    def get_all(self, session: Optional[Session] = None) -> List[Interview]:
+        """Get all interviews with their relationships."""
+        from sqlalchemy.orm import joinedload
+        s = session or self.session
+        return s.query(Interview).options(
+            joinedload(Interview.annotations),
+            joinedload(Interview.priorities),
+            joinedload(Interview.themes),
+            joinedload(Interview.emotions)
+        ).all()
     
     def get_interview_statistics(self) -> Dict[str, Any]:
         """Get overall interview statistics."""
@@ -243,6 +257,67 @@ class ThemeRepository:
         ).all()
 
 
+class ConversationRepository:
+    """Repository for conversation turn operations."""
+    
+    def __init__(self, session: Session):
+        self.session = session
+    
+    def save_conversation_turns(self, interview_id: int, turns: List[Dict[str, Any]]) -> None:
+        """Save conversation turns for an interview."""
+        for turn_data in turns:
+            turn = Turn(
+                interview_id=interview_id,
+                turn_number=turn_data['turn_number'],
+                speaker=turn_data['speaker'],
+                speaker_id=turn_data.get('speaker_id'),
+                text=turn_data['text'],
+                word_count=turn_data['word_count'],
+                start_time=turn_data.get('start_time'),
+                end_time=turn_data.get('end_time')
+            )
+            self.session.add(turn)
+        self.session.flush()
+    
+    def get_conversation_turns(self, interview_id: int) -> List[Turn]:
+        """Get all turns for an interview."""
+        return self.session.query(Turn).filter(
+            Turn.interview_id == interview_id
+        ).order_by(Turn.turn_number).all()
+    
+    def get_speaker_statistics(self, interview_id: int) -> Dict[str, Any]:
+        """Get speaker statistics for an interview."""
+        turns = self.get_conversation_turns(interview_id)
+        
+        if not turns:
+            return {}
+        
+        speakers = {}
+        total_words = 0
+        
+        for turn in turns:
+            speaker_key = f"{turn.speaker}_{turn.speaker_id}" if turn.speaker_id else turn.speaker
+            if speaker_key not in speakers:
+                speakers[speaker_key] = {
+                    'speaker': turn.speaker,
+                    'speaker_id': turn.speaker_id,
+                    'turn_count': 0,
+                    'word_count': 0
+                }
+            
+            speakers[speaker_key]['turn_count'] += 1
+            speakers[speaker_key]['word_count'] += turn.word_count
+            total_words += turn.word_count
+        
+        return {
+            'total_turns': len(turns),
+            'total_words': total_words,
+            'unique_speakers': len(speakers),
+            'speakers': list(speakers.values()),
+            'avg_words_per_turn': total_words / len(turns) if turns else 0
+        }
+
+
 class ExtractedDataRepository:
     """Repository for saving extracted data to database."""
     
@@ -252,15 +327,18 @@ class ExtractedDataRepository:
         self.annotation_repo = AnnotationRepository(session)
         self.priority_repo = PriorityRepository(session)
         self.theme_repo = ThemeRepository(session)
+        self.conversation_repo = ConversationRepository(session)
     
     def save_extracted_data(self, extracted_data: ExtractedData, 
-                          xml_content: Optional[str] = None) -> None:
+                          xml_content: Optional[str] = None,
+                          raw_text: Optional[str] = None) -> None:
         """
         Save extracted data to database.
         
         Args:
             extracted_data: ExtractedData object
             xml_content: Original XML annotation content
+            raw_text: Original interview text
         """
         try:
             # Get or create interview
@@ -273,8 +351,35 @@ class ExtractedDataRepository:
                     'location': extracted_data.location,
                     'department': extracted_data.department,
                     'participant_count': extracted_data.participant_count,
+                    'raw_text': raw_text,
+                    'word_count': len(raw_text.split()) if raw_text else 0,
                     'status': 'completed'
                 })
+            
+            # Parse and save conversation turns if raw text is available
+            if raw_text:
+                try:
+                    parser = ConversationParser()
+                    turns = parser.parse_conversation(raw_text)
+                    
+                    # Convert turns to dict format for saving
+                    turn_dicts = []
+                    for turn in turns:
+                        turn_dicts.append({
+                            'turn_number': turn.turn_number,
+                            'speaker': turn.speaker,
+                            'speaker_id': turn.speaker_id,
+                            'text': turn.text,
+                            'word_count': turn.word_count,
+                            'start_time': None,  # Could be enhanced later
+                            'end_time': None
+                        })
+                    
+                    self.conversation_repo.save_conversation_turns(interview.id, turn_dicts)
+                    logger.info(f"Saved {len(turns)} conversation turns for interview {extracted_data.interview_id}")
+                    
+                except Exception as e:
+                    logger.warning(f"Failed to parse conversation turns for interview {extracted_data.interview_id}: {e}")
             
             # Create annotation
             annotation = self.annotation_repo.create_annotation(interview.id, {

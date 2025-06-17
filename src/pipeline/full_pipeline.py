@@ -11,7 +11,7 @@ from src.config.config_loader import get_config
 from src.pipeline.ingestion.document_processor import DocumentProcessor, InterviewDocument
 from src.pipeline.annotation.annotation_engine import AnnotationEngine
 from src.pipeline.extraction.data_extractor import DataExtractor
-from src.database.connection import get_session
+from src.database.connection import get_session, get_db
 from src.database.repository import ExtractedDataRepository, ProcessingLog
 
 logger = logging.getLogger(__name__)
@@ -72,8 +72,11 @@ class FullPipeline:
             logger.info(f"Extracting structured data for {interview.id}")
             # Save XML temporarily for extraction
             import tempfile
+            import xml.etree.ElementTree as ET
             with tempfile.NamedTemporaryFile(mode='w', suffix='.xml', delete=False) as tmp:
-                annotation_xml.write(tmp.file, encoding='unicode')
+                # Convert Element to string and write
+                xml_string = ET.tostring(annotation_xml, encoding='unicode')
+                tmp.write(xml_string)
                 tmp_path = Path(tmp.name)
             
             extracted_data = self.data_extractor.extract_from_xml(tmp_path)
@@ -96,14 +99,15 @@ class FullPipeline:
             # Step 4: Database Storage
             if save_to_db:
                 logger.info(f"Saving to database for {interview.id}")
-                with get_session() as session:
+                db = get_db()
+                with db.get_session() as session:
                     repo = ExtractedDataRepository(session)
                     
                     # Convert XML to string for storage
                     import xml.etree.ElementTree as ET
                     xml_string = ET.tostring(annotation_xml, encoding='unicode')
                     
-                    repo.save_extracted_data(extracted_data, xml_content=xml_string)
+                    repo.save_extracted_data(extracted_data, xml_content=xml_string, raw_text=interview.text)
                     
                     # Log processing
                     log_entry = ProcessingLog(
@@ -221,7 +225,11 @@ class FullPipeline:
         output_dir.mkdir(parents=True, exist_ok=True)
         
         xml_path = output_dir / f"{interview_id}_annotation.xml"
-        annotation_xml.write(str(xml_path), encoding='utf-8', xml_declaration=True)
+        
+        # Create ElementTree and write to file
+        import xml.etree.ElementTree as ET
+        tree = ET.ElementTree(annotation_xml)
+        tree.write(str(xml_path), encoding='utf-8', xml_declaration=True)
         
         return xml_path
     
