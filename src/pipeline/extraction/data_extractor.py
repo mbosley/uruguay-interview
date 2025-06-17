@@ -159,65 +159,173 @@ class DataExtractor:
             raise
     
     def _extract_metadata(self, root: ET.Element) -> Dict[str, Any]:
-        """Extract metadata from XML."""
+        """Extract metadata from XML (handles AI-generated structure)."""
         metadata = {}
         
-        # Interview metadata
-        interview_elem = root.find(".//interview_metadata")
-        if interview_elem is not None:
-            for child in interview_elem:
-                metadata[child.tag] = child.text
+        # AI-generated structure: <interview_level><metadata>
+        interview_level = root.find(".//interview_level")
+        if interview_level is not None:
+            metadata_elem = interview_level.find("metadata")
+            if metadata_elem is not None:
+                # Extract interview_id
+                id_elem = metadata_elem.find("interview_id")
+                if id_elem is not None:
+                    metadata["id"] = id_elem.text
+                
+                # Extract date
+                date_elem = metadata_elem.find("date")
+                if date_elem is not None:
+                    metadata["date"] = date_elem.text
+                
+                # Extract location info
+                location_elem = metadata_elem.find("location")
+                if location_elem is not None:
+                    municipality = location_elem.find("municipality")
+                    department = location_elem.find("department")
+                    if municipality is not None:
+                        metadata["location"] = municipality.text
+                    if department is not None:
+                        metadata["department"] = department.text
         
-        # Processing metadata
-        processing_elem = root.find(".//processing_metadata")
-        if processing_elem is not None:
-            for child in processing_elem:
-                metadata[child.tag] = child.text
+        # Extract confidence from uncertainty_tracking
+        uncertainty_elem = root.find(".//uncertainty_tracking")
+        if uncertainty_elem is not None:
+            confidence_elem = uncertainty_elem.find("overall_confidence")
+            if confidence_elem is not None:
+                try:
+                    metadata["confidence"] = float(confidence_elem.text)
+                except (ValueError, TypeError):
+                    metadata["confidence"] = 0.0
         
-        # Try to extract from other locations
+        # Fallback: try old structure for backward compatibility
         if not metadata.get("id"):
-            id_elem = root.find(".//interview_id")
-            if id_elem is not None:
-                metadata["id"] = id_elem.text
+            old_interview_elem = root.find(".//interview_metadata")
+            if old_interview_elem is not None:
+                for child in old_interview_elem:
+                    metadata[child.tag] = child.text
         
         return metadata
     
     def _extract_interview_level(self, root: ET.Element, data: ExtractedData) -> None:
-        """Extract interview-level analysis."""
+        """Extract interview-level analysis (handles AI-generated structure)."""
+        # AI-generated structure: <narrative_features>
+        narrative_features = root.find(".//narrative_features")
+        if narrative_features is not None:
+            # Extract dominant frame as emotion
+            frame_elem = narrative_features.find("dominant_frame")
+            if frame_elem is not None and frame_elem.text:
+                data.dominant_emotion = frame_elem.text.strip()
+            
+            # Extract temporal orientation as sentiment indicator
+            temporal_elem = narrative_features.find("temporal_orientation")
+            if temporal_elem is not None and temporal_elem.text:
+                # Map temporal orientation to sentiment
+                temporal = temporal_elem.text.strip().lower()
+                if "past" in temporal:
+                    data.overall_sentiment = "negative"
+                elif "future" in temporal:
+                    data.overall_sentiment = "positive"
+                else:
+                    data.overall_sentiment = "neutral"
+        
+        # Fallback: try old structure for backward compatibility
         interview_analysis = root.find(".//interview_level_analysis")
-        if interview_analysis is None:
-            return
-        
-        # Dominant emotion
-        emotion_elem = interview_analysis.find(".//dominant_emotion")
-        if emotion_elem is not None and emotion_elem.text:
-            data.dominant_emotion = emotion_elem.text.strip()
-        
-        # Overall sentiment
-        sentiment_elem = interview_analysis.find(".//overall_sentiment")
-        if sentiment_elem is not None and sentiment_elem.text:
-            data.overall_sentiment = sentiment_elem.text.strip().lower()
+        if interview_analysis is not None:
+            emotion_elem = interview_analysis.find(".//dominant_emotion")
+            if emotion_elem is not None and emotion_elem.text:
+                data.dominant_emotion = emotion_elem.text.strip()
+            
+            sentiment_elem = interview_analysis.find(".//overall_sentiment")
+            if sentiment_elem is not None and sentiment_elem.text:
+                data.overall_sentiment = sentiment_elem.text.strip().lower()
     
     def _extract_priorities(self, root: ET.Element, data: ExtractedData) -> None:
-        """Extract national and local priorities."""
-        # National priorities
-        national_elem = root.find(".//national_priorities")
-        if national_elem is not None:
-            for i, priority_elem in enumerate(national_elem.findall(".//priority")):
-                priority = self._parse_priority(priority_elem, i + 1)
-                if priority:
-                    data.national_priorities.append(priority)
+        """Extract national and local priorities (handles AI-generated structure)."""
+        # AI-generated structure: <priority_summary><national_priorities>
+        priority_summary = root.find(".//priority_summary")
+        if priority_summary is not None:
+            # National priorities
+            national_elem = priority_summary.find("national_priorities")
+            if national_elem is not None:
+                for priority_elem in national_elem.findall("priority"):
+                    priority = self._parse_ai_priority(priority_elem, "national")
+                    if priority:
+                        data.national_priorities.append(priority)
+            
+            # Local priorities
+            local_elem = priority_summary.find("local_priorities")
+            if local_elem is not None:
+                for priority_elem in local_elem.findall("priority"):
+                    priority = self._parse_ai_priority(priority_elem, "local")
+                    if priority:
+                        data.local_priorities.append(priority)
         
-        # Local priorities
-        local_elem = root.find(".//local_priorities")
-        if local_elem is not None:
-            for i, priority_elem in enumerate(local_elem.findall(".//priority")):
-                priority = self._parse_priority(priority_elem, i + 1)
-                if priority:
-                    data.local_priorities.append(priority)
+        # Fallback: try old structure for backward compatibility
+        if not data.national_priorities and not data.local_priorities:
+            national_elem = root.find(".//national_priorities")
+            if national_elem is not None:
+                for i, priority_elem in enumerate(national_elem.findall(".//priority")):
+                    priority = self._parse_priority(priority_elem, i + 1)
+                    if priority:
+                        data.national_priorities.append(priority)
+            
+            local_elem = root.find(".//local_priorities")
+            if local_elem is not None:
+                for i, priority_elem in enumerate(local_elem.findall(".//priority")):
+                    priority = self._parse_priority(priority_elem, i + 1)
+                    if priority:
+                        data.local_priorities.append(priority)
+    
+    def _parse_ai_priority(self, elem: ET.Element, scope: str) -> Optional[Priority]:
+        """Parse a priority element from AI-generated XML."""
+        # AI structure: <priority rank="1"><theme>Theme</theme><narrative_elaboration>...</narrative_elaboration>
+        theme_elem = elem.find("theme")
+        narrative_elem = elem.find("narrative_elaboration")
+        
+        if theme_elem is None or not theme_elem.text:
+            return None
+        
+        theme_text = theme_elem.text.strip()
+        description = narrative_elem.text.strip() if narrative_elem is not None else theme_text
+        
+        # Map theme to category
+        category = self._map_theme_to_category(theme_text.lower())
+        
+        priority = Priority(
+            rank=int(elem.get("rank", 1)),
+            category=category,
+            subcategory=None,
+            description=description
+        )
+        
+        # Set confidence (default to high for AI-extracted priorities)
+        priority.confidence = 0.8
+        
+        return priority
+    
+    def _map_theme_to_category(self, theme: str) -> str:
+        """Map AI-generated theme to our category system."""
+        theme_mapping = {
+            "inclusion": "social",
+            "state support": "governance",
+            "training": "education",
+            "infrastructure": "infrastructure",
+            "community awareness": "social",
+            "employment": "economy",
+            "health": "healthcare",
+            "safety": "security",
+            "education": "education",
+            "environment": "environment"
+        }
+        
+        for key, category in theme_mapping.items():
+            if key in theme:
+                return category
+        
+        return "other"
     
     def _parse_priority(self, elem: ET.Element, default_rank: int) -> Optional[Priority]:
-        """Parse a single priority element."""
+        """Parse a single priority element (legacy format)."""
         description = elem.find(".//description")
         if description is None or not description.text:
             return None
@@ -263,8 +371,24 @@ class DataExtractor:
         return priority
     
     def _extract_themes(self, root: ET.Element, data: ExtractedData) -> None:
-        """Extract themes, concerns, and suggestions."""
-        # Main themes
+        """Extract themes, concerns, and suggestions (handles AI-generated structure)."""
+        # Extract themes from priority themes
+        priority_summary = root.find(".//priority_summary")
+        if priority_summary is not None:
+            # Extract themes from national priorities
+            for priority in priority_summary.findall(".//priority"):
+                theme_elem = priority.find("theme")
+                if theme_elem is not None and theme_elem.text:
+                    data.themes.append(theme_elem.text.strip())
+        
+        # Extract from key narratives
+        key_narratives = root.find(".//key_narratives")
+        if key_narratives is not None:
+            for child in key_narratives:
+                if child.tag and "narrative" in child.tag:
+                    data.themes.append(child.tag.replace("_narrative", "").replace("_", " ").title())
+        
+        # Fallback: try old structure
         themes_elem = root.find(".//main_themes")
         if themes_elem is not None:
             for theme in themes_elem.findall(".//theme"):
@@ -294,7 +418,22 @@ class DataExtractor:
                 data.suggestions.append(suggestion_data)
     
     def _extract_emotions(self, root: ET.Element, data: ExtractedData) -> None:
-        """Extract emotional expressions."""
+        """Extract emotional expressions (handles AI-generated structure)."""
+        # Extract from narrative features
+        narrative_features = root.find(".//narrative_features")
+        if narrative_features is not None:
+            # Extract dominant frame as emotion
+            frame_elem = narrative_features.find("dominant_frame")
+            if frame_elem is not None and frame_elem.text:
+                emotion = Emotion(
+                    type=frame_elem.text.strip(),
+                    intensity="medium",
+                    target="general",
+                    context="Dominant narrative frame"
+                )
+                data.emotions.append(emotion)
+        
+        # Fallback: try old structure
         emotions_elem = root.find(".//emotions")
         if emotions_elem is not None:
             for emotion_elem in emotions_elem.findall(".//emotion"):

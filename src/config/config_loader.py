@@ -9,6 +9,14 @@ from typing import Dict, Any, Optional
 from dataclasses import dataclass, field
 import logging
 
+try:
+    from dotenv import load_dotenv
+    # Load .env file if it exists
+    load_dotenv()
+except ImportError:
+    # dotenv not available, skip loading
+    pass
+
 logger = logging.getLogger(__name__)
 
 

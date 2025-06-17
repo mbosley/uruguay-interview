@@ -269,7 +269,11 @@ def pipeline(file_path: str, save_db: bool):
             click.echo(f"  National priorities: {data['n_national_priorities']}")
             click.echo(f"  Local priorities: {data['n_local_priorities']}")
             click.echo(f"  Themes: {data['n_themes']}")
-            click.echo(f"  Confidence: {data['confidence']:.2f}")
+            confidence = data['confidence']
+            if isinstance(confidence, (int, float)):
+                click.echo(f"  Confidence: {confidence:.2f}")
+            else:
+                click.echo(f"  Confidence: {confidence}")
     else:
         click.echo(f"✗ Pipeline failed: {result['errors']}", err=True)
 
@@ -364,7 +368,8 @@ def db_status():
     
     # Get statistics
     try:
-        with get_session() as session:
+        db = get_db()
+        with db.get_session() as session:
             repo = InterviewRepository(session)
             stats = repo.get_interview_statistics()
             

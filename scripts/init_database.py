@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Initialize the Uruguay interview analysis database.
+Initialize the database schema for Uruguay Interview Analysis
 """
 import sys
 from pathlib import Path
@@ -8,54 +8,49 @@ from pathlib import Path
 # Add project root to path
 sys.path.append(str(Path(__file__).parent.parent))
 
-from src.database.connection import get_db, init_database
+from src.database.connection import DatabaseConnection
+from src.database.models import Base
 from src.config.config_loader import get_config
+import logging
 
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def main():
-    """Initialize database with tables."""
-    print("Uruguay Interview Analysis - Database Initialization")
-    print("=" * 50)
-    
-    # Load configuration
+def init_database():
+    """Initialize database with all required tables."""
     config = get_config()
-    print(f"Database: {config.database.name}")
-    print(f"Host: {config.database.host}:{config.database.port}")
+    db = DatabaseConnection(config.database.url)
     
-    # Test connection
-    db = get_db()
-    if not db.test_connection():
-        print("\n❌ Failed to connect to database!")
-        print("Please check your database configuration and ensure PostgreSQL is running.")
-        return 1
-    
-    print("\n✓ Database connection successful")
-    
-    # Confirm initialization
-    response = input("\nThis will create all database tables. Continue? [y/N]: ")
-    if response.lower() != 'y':
-        print("Initialization cancelled.")
-        return 0
-    
-    # Initialize database
     try:
-        init_database()
-        print("\n✓ Database tables created successfully!")
+        # Drop all tables if they exist (for clean start)
+        logger.info("Dropping existing tables...")
+        Base.metadata.drop_all(db.engine)
         
-        # Show created tables
-        from src.database.models import Base
-        print("\nCreated tables:")
-        for table in Base.metadata.sorted_tables:
-            print(f"  - {table.name}")
+        # Create all tables
+        logger.info("Creating database schema...")
+        Base.metadata.create_all(db.engine)
         
-        print("\n✓ Database is ready for use!")
+        # Verify tables were created
+        from sqlalchemy import inspect
+        inspector = inspect(db.engine)
+        tables = inspector.get_table_names()
+        
+        logger.info(f"Created {len(tables)} tables:")
+        for table in sorted(tables):
+            logger.info(f"  - {table}")
+        
+        # Test connection
+        with db.get_session() as session:
+            from src.database.models import Interview
+            count = session.query(Interview).count()
+            logger.info(f"Database initialized successfully. Current interviews: {count}")
+        
+        return True
         
     except Exception as e:
-        print(f"\n❌ Failed to initialize database: {e}")
-        return 1
-    
-    return 0
-
+        logger.error(f"Failed to initialize database: {e}")
+        return False
 
 if __name__ == "__main__":
-    sys.exit(main())
+    success = init_database()
+    sys.exit(0 if success else 1)
