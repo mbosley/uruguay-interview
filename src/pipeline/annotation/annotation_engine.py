@@ -14,6 +14,7 @@ import google.generativeai as genai
 
 from src.pipeline.ingestion.document_processor import InterviewDocument
 from src.pipeline.annotation.prompt_manager import PromptManager
+from src.pipeline.annotation.schema_validator import SchemaValidator
 from src.config.config_loader import get_config
 
 logger = logging.getLogger(__name__)
@@ -49,6 +50,9 @@ class AnnotationEngine:
         self.prompt_manager = prompt_manager or PromptManager(
             prompt_file=self.config.annotation.prompt_file
         )
+        
+        # Initialize schema validator
+        self.schema_validator = SchemaValidator()
         
         # Get API key from config loader
         from src.config.config_loader import ConfigLoader
@@ -124,16 +128,37 @@ class AnnotationEngine:
                 else:
                     annotation_xml = self._call_gemini(prompt, temperature)
                 
-                # Parse and validate
+                # Parse XML response
                 annotation = self.prompt_manager.parse_annotation_response(annotation_xml)
-                is_valid, errors = self.prompt_manager.validate_annotation(annotation)
+                
+                # Add processing metadata before validation (required by schema)
+                temp_metadata = {
+                    "model_provider": self.model_provider,
+                    "model_name": self.model_name,
+                    "timestamp": datetime.now().isoformat(),
+                    "processing_time": 0.0,  # Will be updated later
+                    "attempts": attempt + 1,
+                    "temperature": temperature,
+                    "interview_word_count": len(interview.text.split()),
+                    "confidence": self._extract_confidence(annotation)
+                }
+                self._add_processing_metadata(annotation, temp_metadata)
+                
+                # Validate against XSD schema
+                is_valid, errors = self.schema_validator.validate_xml_element(annotation)
                 
                 if not is_valid:
-                    logger.warning(f"Validation errors: {errors}")
+                    logger.warning(f"Schema validation failed on attempt {attempt + 1} for interview {interview.id}")
+                    logger.debug(f"Validation errors: {errors}")
                     if attempt < max_retries - 1:
-                        # Try to fix errors in next attempt
-                        prompt = self._create_correction_prompt(prompt, errors)
+                        # Create correction prompt with schema guidance
+                        prompt = self._create_schema_correction_prompt(prompt, errors, annotation_xml)
+                        logger.info(f"Retrying with schema correction prompt (attempt {attempt + 2})")
                         continue
+                    else:
+                        logger.error(f"Final attempt failed schema validation for interview {interview.id}")
+                else:
+                    logger.info(f"Schema validation passed for interview {interview.id} on attempt {attempt + 1}")
                 
                 # Success!
                 break
@@ -147,7 +172,15 @@ class AnnotationEngine:
         if annotation is None:
             raise RuntimeError(f"Failed to annotate after {max_retries} attempts: {last_error}")
         
-        # Create processing metadata
+        # Update processing metadata with final timing
+        processing_elem = annotation.find("processing_metadata")
+        if processing_elem is not None:
+            # Update the processing time
+            time_elem = processing_elem.find("processing_time")
+            if time_elem is not None:
+                time_elem.text = str(time.time() - start_time)
+        
+        # Create final processing metadata for return
         processing_metadata = {
             "model_provider": self.model_provider,
             "model_name": self.model_name,
@@ -159,25 +192,36 @@ class AnnotationEngine:
             "confidence": self._extract_confidence(annotation)
         }
         
-        # Add processing metadata to annotation
-        self._add_processing_metadata(annotation, processing_metadata)
-        
         return annotation, processing_metadata
     
-    def _call_openai(self, prompt: str, temperature: float) -> str:
-        """Call OpenAI API for annotation."""
+    def _call_openai(self, prompt: str, temperature: float, cached_content: str = None) -> str:
+        """Call OpenAI API for annotation with optional prompt caching."""
+        messages = [
+            {
+                "role": "system",
+                "content": "You are an expert qualitative researcher specializing in citizen consultations. You follow annotation schemas precisely and output valid XML."
+            }
+        ]
+        
+        # Add cached content if provided (for progressive annotation)
+        if cached_content:
+            messages.append({
+                "role": "user", 
+                "content": cached_content
+            })
+            messages.append({
+                "role": "user",
+                "content": prompt
+            })
+        else:
+            messages.append({
+                "role": "user",
+                "content": prompt
+            })
+        
         response = self.client.chat.completions.create(
             model=self.model_name,
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an expert qualitative researcher specializing in citizen consultations. You follow annotation schemas precisely and output valid XML."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
+            messages=messages,
             temperature=temperature,
             max_tokens=8000  # Generous limit for detailed annotations
         )
@@ -221,15 +265,32 @@ class AnnotationEngine:
         
         return response.text
     
-    def _create_correction_prompt(self, original_prompt: str, errors: List[str]) -> str:
-        """Create a prompt to correct validation errors."""
+    def _create_schema_correction_prompt(self, original_prompt: str, errors: List[str], failed_xml: str) -> str:
+        """Create a prompt to correct XSD schema validation errors."""
         error_text = "\n".join(f"- {error}" for error in errors)
         
-        correction_prompt = f"""The previous annotation had validation errors:
+        # Get suggestions for fixing common errors
+        suggestions = self.schema_validator.suggest_fixes(errors)
+        suggestion_text = "\n".join(f"- {suggestion}" for suggestion in suggestions)
+        
+        correction_prompt = f"""The previous annotation failed XSD schema validation with these errors:
 
+VALIDATION ERRORS:
 {error_text}
 
-Please provide a corrected annotation that addresses these errors.
+SUGGESTED FIXES:
+{suggestion_text}
+
+CRITICAL REQUIREMENTS:
+- Follow the exact XSD schema structure at config/schemas/annotation_schema.xsd
+- Use <issue> elements inside <specific_issues>: <specific_issues><issue>text</issue></specific_issues>
+- Use <topic> elements inside <topics>: <topics><topic>text</topic></topics>
+- Use <scope> elements inside <geographic_scope>: <geographic_scope><scope>local</scope></geographic_scope>
+- Ensure all confidence values are between 0.0 and 1.0
+- Include required rank attributes on priority elements: rank="1", rank="2", rank="3"
+- Use only enumerated values for categorical fields (check XSD for valid values)
+
+Please provide a corrected annotation that strictly follows the XSD schema.
 
 {original_prompt}"""
         
