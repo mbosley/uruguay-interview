@@ -8,7 +8,7 @@ An advanced AI framework for analyzing citizen consultation interviews at scale,
 [📋 Master Roadmap](docs/roadmap/PROJECT_ROADMAP.md) | [🤖 Annotation Framework](docs/roadmap/ANNOTATION_FRAMEWORK_ROADMAP.md) | [💬 WhatsApp AI](docs/roadmap/WHATSAPP_AI_FOLLOWUP_ROADMAP.md) | [👥 Digital Twins](docs/roadmap/DIGITAL_TWIN_RESEARCH_ROADMAP.md) | [📊 Quantitative Insights](docs/roadmap/QUANTITATIVE_INSIGHTS_FRAMEWORK.md)
 
 **Development:**
-[💻 Dev Guidelines](CLAUDE.md) | [⚙️ Configuration](docs/CONFIGURATION.md) | [📝 Annotation Schema](config/prompts/annotation_prompt_v1.xml)
+[💻 Dev Guidelines](CLAUDE.md) | [📚 Documentation Hub](docs/README.md) | [⚙️ Setup Guide](docs/USER_GUIDE.md) | [🔧 Technical Log](docs/TECHNICAL_LOG.md) | [📊 Research Log](docs/RESEARCH_LOG.md)
 
 ## 🎯 Project Overview
 

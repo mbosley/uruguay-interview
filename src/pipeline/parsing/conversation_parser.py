@@ -158,13 +158,13 @@ class ConversationParser:
         """Normalize speaker names for consistency."""
         speaker_lower = speaker.lower()
         
-        # Map common variations
+        # Map common variations (keep Spanish terms)
         if speaker_lower in ['entrevistador', 'ent', 'e']:
-            return 'Interviewer'
+            return 'Entrevistador'
         elif speaker_lower in ['entrevistado', 'participante', 'p']:
-            return 'Participant'
+            return 'Participante'
         elif speaker_lower in ['moderador', 'mod', 'm']:
-            return 'Moderator'
+            return 'Moderador'
         else:
             # Keep original for specific initials like AM, CR, JP
             return speaker.upper()

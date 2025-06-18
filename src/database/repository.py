@@ -22,10 +22,10 @@ logger = logging.getLogger(__name__)
 class InterviewRepository:
     """Repository for interview-related database operations."""
     
-    def __init__(self, db_connection=None):
-        """Initialize repository with optional database connection."""
+    def __init__(self, db_connection=None, session=None):
+        """Initialize repository with optional database connection or session."""
         self.db_connection = db_connection
-        self.session = None
+        self.session = session
     
     def create_interview(self, interview_data: Dict[str, Any]) -> Interview:
         """Create a new interview record."""
@@ -323,11 +323,11 @@ class ExtractedDataRepository:
     
     def __init__(self, session: Session):
         self.session = session
-        self.interview_repo = InterviewRepository(session)
-        self.annotation_repo = AnnotationRepository(session)
-        self.priority_repo = PriorityRepository(session)
-        self.theme_repo = ThemeRepository(session)
-        self.conversation_repo = ConversationRepository(session)
+        self.interview_repo = InterviewRepository(session=session)
+        self.annotation_repo = AnnotationRepository(session=session)
+        self.priority_repo = PriorityRepository(session=session)
+        self.theme_repo = ThemeRepository(session=session)
+        self.conversation_repo = ConversationRepository(session=session)
     
     def save_extracted_data(self, extracted_data: ExtractedData, 
                           xml_content: Optional[str] = None,

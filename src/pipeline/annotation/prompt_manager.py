@@ -80,6 +80,25 @@ Complete the XML annotation following all instructions and examples in the schem
 
 {xml_string}
 
+CRITICAL: This annotation must conform to a formal XSD schema (config/schemas/annotation_schema.xsd).
+Your output will be validated against this schema and rejected if it doesn't comply.
+
+XSD COMPLIANCE REQUIREMENTS:
+- Use <issue> elements inside <specific_issues>: <specific_issues><issue>text</issue></specific_issues>
+- Use <topic> elements inside <topics>: <topics><topic>text</topic></topics>  
+- Use <scope> elements inside <geographic_scope>: <geographic_scope><scope>local</scope></geographic_scope>
+- Use <quote> elements inside <memorable_quotes>: <memorable_quotes><quote>text</quote></memorable_quotes>
+- Use <flag> elements inside <uncertainty_flags>: <uncertainty_flags><flag>unclear_priorities</flag></uncertainty_flags>
+- Use <emotion> elements inside <specific_emotions>: <specific_emotions><emotion>frustration</emotion></specific_emotions>
+- Include required rank attributes: <priority rank="1"> (valid values: 1, 2, 3)
+- Use only enumerated values for categorical fields:
+  * age_range: 18-29, 30-44, 45-59, 60-74, 75+, not_specified
+  * gender: male, female, non_binary, not_specified
+  * locality_size: rural, small_town, medium_city, large_city, metropolitan
+  * emotional_valence: positive, negative, neutral, mixed, mostly_positive, mostly_negative
+  * evidence_type: personal_experience, community_observation, statistics, expert_opinion, media_report, government_data, hearsay, general_assertion, none
+- Ensure all confidence values are decimals between 0.0 and 1.0
+
 IMPORTANT: 
 - Return ONLY the completed XML annotation (everything from <annotation_result> to </annotation_result>)
 - Preserve the exact XML structure from the schema

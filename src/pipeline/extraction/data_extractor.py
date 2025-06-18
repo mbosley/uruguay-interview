@@ -72,9 +72,44 @@ class ExtractedData:
     # Geographic references
     geographic_mentions: List[str] = field(default_factory=list)
     
-    # Demographic indicators (inferred)
+    # Demographic indicators (from participant_profile)
     inferred_age_group: Optional[str] = None
     inferred_socioeconomic: Optional[str] = None
+    inferred_gender: Optional[str] = None
+    organizational_affiliation: Optional[str] = None
+    occupation_sector: Optional[str] = None
+    political_stance: Optional[str] = None
+    
+    # Narrative features
+    dominant_frame: Optional[str] = None
+    temporal_orientation: Optional[str] = None
+    government_responsibility: Optional[float] = None
+    individual_responsibility: Optional[float] = None
+    structural_factors: Optional[float] = None
+    solution_orientation: Optional[str] = None
+    
+    # Key narratives
+    identity_narrative: Optional[str] = None
+    problem_narrative: Optional[str] = None
+    hope_narrative: Optional[str] = None
+    memorable_quotes: List[str] = field(default_factory=list)
+    
+    # Interview dynamics
+    rapport: Optional[str] = None
+    participant_engagement: Optional[str] = None
+    coherence: Optional[str] = None
+    
+    # Uncertainty tracking
+    overall_confidence: Optional[float] = None
+    uncertainty_flags: List[str] = field(default_factory=list)
+    uncertainty_narrative: Optional[str] = None
+    contextual_gaps: List[Dict[str, str]] = field(default_factory=list)
+    
+    # Analytical insights
+    tensions_contradictions: Optional[str] = None
+    silences_omissions: Optional[str] = None
+    interviewer_reflections: Optional[str] = None
+    broader_connections: Optional[str] = None
     
     # Quality metrics
     annotation_completeness: float = 0.0
@@ -211,14 +246,16 @@ class DataExtractor:
         # AI-generated structure: <narrative_features>
         narrative_features = root.find(".//narrative_features")
         if narrative_features is not None:
-            # Extract dominant frame as emotion
+            # Extract dominant frame
             frame_elem = narrative_features.find("dominant_frame")
             if frame_elem is not None and frame_elem.text:
-                data.dominant_emotion = frame_elem.text.strip()
+                data.dominant_frame = frame_elem.text.strip()
+                data.dominant_emotion = frame_elem.text.strip()  # Keep for backward compatibility
             
-            # Extract temporal orientation as sentiment indicator
+            # Extract temporal orientation
             temporal_elem = narrative_features.find("temporal_orientation")
             if temporal_elem is not None and temporal_elem.text:
+                data.temporal_orientation = temporal_elem.text.strip()
                 # Map temporal orientation to sentiment
                 temporal = temporal_elem.text.strip().lower()
                 if "past" in temporal:
@@ -227,6 +264,44 @@ class DataExtractor:
                     data.overall_sentiment = "positive"
                 else:
                     data.overall_sentiment = "neutral"
+            
+            # Extract agency attribution
+            agency_elem = narrative_features.find("agency_attribution")
+            if agency_elem is not None:
+                gov_resp = agency_elem.find("government_responsibility")
+                if gov_resp is not None and gov_resp.text:
+                    try:
+                        data.government_responsibility = float(gov_resp.text)
+                    except (ValueError, TypeError):
+                        pass
+                
+                ind_resp = agency_elem.find("individual_responsibility")
+                if ind_resp is not None and ind_resp.text:
+                    try:
+                        data.individual_responsibility = float(ind_resp.text)
+                    except (ValueError, TypeError):
+                        pass
+                
+                struct_factors = agency_elem.find("structural_factors")
+                if struct_factors is not None and struct_factors.text:
+                    try:
+                        data.structural_factors = float(struct_factors.text)
+                    except (ValueError, TypeError):
+                        pass
+            
+            # Extract solution orientation
+            solution_elem = narrative_features.find("solution_orientation")
+            if solution_elem is not None and solution_elem.text:
+                data.solution_orientation = solution_elem.text.strip()
+        
+        # Extract key narratives
+        self._extract_key_narratives(root, data)
+        
+        # Extract interview dynamics
+        self._extract_interview_dynamics(root, data)
+        
+        # Extract analytical insights
+        self._extract_analytical_insights(root, data)
         
         # Fallback: try old structure for backward compatibility
         interview_analysis = root.find(".//interview_level_analysis")
@@ -278,15 +353,19 @@ class DataExtractor:
     
     def _parse_ai_priority(self, elem: ET.Element, scope: str) -> Optional[Priority]:
         """Parse a priority element from AI-generated XML."""
-        # AI structure: <priority rank="1"><theme>Theme</theme><narrative_elaboration>...</narrative_elaboration>
+        # AI structure: <priority rank="1"><theme>Theme</theme><specific_issues>...</specific_issues><narrative_elaboration>...</narrative_elaboration>
         theme_elem = elem.find("theme")
         narrative_elem = elem.find("narrative_elaboration")
+        issues_elem = elem.find("specific_issues")
         
         if theme_elem is None or not theme_elem.text:
             return None
         
         theme_text = theme_elem.text.strip()
-        description = narrative_elem.text.strip() if narrative_elem is not None else theme_text
+        description = narrative_elem.text.strip() if narrative_elem is not None and narrative_elem.text else theme_text
+        
+        # Parse specific issues using robust parser
+        specific_issues = self._parse_specific_issues(issues_elem)
         
         # Map theme to category
         category = self._map_theme_to_category(theme_text.lower())
@@ -294,7 +373,7 @@ class DataExtractor:
         priority = Priority(
             rank=int(elem.get("rank", 1)),
             category=category,
-            subcategory=None,
+            subcategory=specific_issues[0] if specific_issues else None,  # Use first issue as subcategory
             description=description
         )
         
@@ -369,6 +448,150 @@ class DataExtractor:
                 pass
         
         return priority
+    
+    def _parse_specific_issues(self, elem: ET.Element) -> List[str]:
+        """Parse specific_issues element handling multiple formats."""
+        if elem is None:
+            return []
+        
+        # Format 1: Bracket notation like "[employment, disability support]"
+        if elem.text and elem.text.strip().startswith('[') and elem.text.strip().endswith(']'):
+            text = elem.text.strip()[1:-1]  # Remove brackets
+            return [item.strip() for item in text.split(',') if item.strip()]
+        
+        # Format 2: Value tags
+        values = elem.findall('value')
+        if values:
+            return [v.text.strip() for v in values if v.text and v.text.strip()]
+        
+        # Format 3: Plain text with commas
+        if elem.text and elem.text.strip():
+            return [item.strip() for item in elem.text.split(',') if item.strip()]
+        
+        return []
+    
+    def _extract_key_narratives(self, root: ET.Element, data: ExtractedData) -> None:
+        """Extract key narratives from AI annotation."""
+        key_narratives = root.find(".//key_narratives")
+        if key_narratives is not None:
+            # Identity narrative
+            identity_elem = key_narratives.find("identity_narrative")
+            if identity_elem is not None and identity_elem.text:
+                data.identity_narrative = identity_elem.text.strip()
+            
+            # Problem narrative
+            problem_elem = key_narratives.find("problem_narrative") 
+            if problem_elem is not None and problem_elem.text:
+                data.problem_narrative = problem_elem.text.strip()
+            
+            # Hope narrative
+            hope_elem = key_narratives.find("hope_narrative")
+            if hope_elem is not None and hope_elem.text:
+                data.hope_narrative = hope_elem.text.strip()
+            
+            # Memorable quotes
+            quotes_elem = key_narratives.find("memorable_quotes")
+            if quotes_elem is not None and quotes_elem.text:
+                # Parse quotes - could be comma-separated or quote-delimited
+                quotes_text = quotes_elem.text.strip()
+                if quotes_text.startswith('"') or quotes_text.count('"') >= 2:
+                    # Extract quoted strings
+                    import re
+                    quotes = re.findall(r'"([^"]*)"', quotes_text)
+                    data.memorable_quotes = [q.strip() for q in quotes if q.strip()]
+                else:
+                    # Comma-separated
+                    data.memorable_quotes = [q.strip() for q in quotes_text.split(',') if q.strip()]
+    
+    def _extract_interview_dynamics(self, root: ET.Element, data: ExtractedData) -> None:
+        """Extract interview dynamics information."""
+        dynamics = root.find(".//interview_dynamics")
+        if dynamics is not None:
+            # Rapport
+            rapport_elem = dynamics.find("rapport")
+            if rapport_elem is not None and rapport_elem.text:
+                data.rapport = rapport_elem.text.strip()
+            
+            # Participant engagement
+            engagement_elem = dynamics.find("participant_engagement")
+            if engagement_elem is not None and engagement_elem.text:
+                data.participant_engagement = engagement_elem.text.strip()
+            
+            # Coherence
+            coherence_elem = dynamics.find("coherence")
+            if coherence_elem is not None and coherence_elem.text:
+                data.coherence = coherence_elem.text.strip()
+    
+    def _extract_analytical_insights(self, root: ET.Element, data: ExtractedData) -> None:
+        """Extract analytical notes and insights."""
+        analytical_notes = root.find(".//analytical_notes")
+        if analytical_notes is not None:
+            # Tensions and contradictions
+            tensions_elem = analytical_notes.find("tensions_contradictions")
+            if tensions_elem is not None and tensions_elem.text:
+                data.tensions_contradictions = tensions_elem.text.strip()
+            
+            # Silences and omissions
+            silences_elem = analytical_notes.find("silences_omissions")
+            if silences_elem is not None and silences_elem.text:
+                data.silences_omissions = silences_elem.text.strip()
+            
+            # Interviewer reflections
+            reflections_elem = analytical_notes.find("interviewer_reflections")
+            if reflections_elem is not None and reflections_elem.text:
+                data.interviewer_reflections = reflections_elem.text.strip()
+            
+            # Broader connections
+            connections_elem = analytical_notes.find("connections_to_broader_themes")
+            if connections_elem is not None and connections_elem.text:
+                data.broader_connections = connections_elem.text.strip()
+        
+        # Extract uncertainty tracking
+        self._extract_uncertainty_tracking(root, data)
+    
+    def _extract_uncertainty_tracking(self, root: ET.Element, data: ExtractedData) -> None:
+        """Extract uncertainty tracking information."""
+        uncertainty = root.find(".//uncertainty_tracking")
+        if uncertainty is not None:
+            # Overall confidence
+            confidence_elem = uncertainty.find("overall_confidence")
+            if confidence_elem is not None and confidence_elem.text:
+                try:
+                    data.overall_confidence = float(confidence_elem.text)
+                except (ValueError, TypeError):
+                    pass
+            
+            # Uncertainty flags
+            flags_elem = uncertainty.find("uncertainty_flags")
+            if flags_elem is not None:
+                for flag in flags_elem.findall("flag"):
+                    if flag.text:
+                        data.uncertainty_flags.append(flag.text.strip())
+            
+            # Uncertainty narrative
+            narrative_elem = uncertainty.find("uncertainty_narrative")
+            if narrative_elem is not None and narrative_elem.text:
+                data.uncertainty_narrative = narrative_elem.text.strip()
+            
+            # Contextual gaps
+            gaps_elem = uncertainty.find("contextual_gaps")
+            if gaps_elem is not None:
+                for gap in gaps_elem.findall("gap"):
+                    gap_data = {}
+                    type_elem = gap.find("type")
+                    if type_elem is not None and type_elem.text:
+                        gap_data["type"] = type_elem.text.strip()
+                    
+                    desc_elem = gap.find("description")
+                    if desc_elem is not None and desc_elem.text:
+                        gap_data["description"] = desc_elem.text.strip()
+                    
+                    impact_elem = gap.find("impact")
+                    if impact_elem is not None and impact_elem.text:
+                        gap_data["impact"] = impact_elem.text.strip()
+                    
+                    if gap_data:
+                        data.contextual_gaps.append(gap_data)
     
     def _extract_themes(self, root: ET.Element, data: ExtractedData) -> None:
         """Extract themes, concerns, and suggestions (handles AI-generated structure)."""
@@ -463,10 +686,36 @@ class DataExtractor:
                     data.geographic_mentions.append(location.text.strip())
     
     def _infer_demographics(self, root: ET.Element, data: ExtractedData) -> None:
-        """Infer demographic information from content."""
-        # This is a simplified version - real implementation would use
-        # more sophisticated NLP and pattern matching
+        """Extract demographic information from participant_profile (AI-generated structure)."""
+        # AI-generated structure: <participant_profile>
+        participant_profile = root.find(".//participant_profile")
+        if participant_profile is not None:
+            # Age range
+            age_elem = participant_profile.find("age_range")
+            if age_elem is not None and age_elem.text:
+                data.inferred_age_group = age_elem.text.strip()
+            
+            # Gender
+            gender_elem = participant_profile.find("gender")
+            if gender_elem is not None and gender_elem.text:
+                data.inferred_gender = gender_elem.text.strip()
+            
+            # Organizational affiliation
+            org_elem = participant_profile.find("organizational_affiliation")
+            if org_elem is not None and org_elem.text:
+                data.organizational_affiliation = org_elem.text.strip()
+            
+            # Occupation sector
+            occupation_elem = participant_profile.find("occupation_sector")
+            if occupation_elem is not None and occupation_elem.text:
+                data.occupation_sector = occupation_elem.text.strip()
+            
+            # Political stance
+            political_elem = participant_profile.find("self_described_political_stance")
+            if political_elem is not None and political_elem.text:
+                data.political_stance = political_elem.text.strip()
         
+        # Fallback: try old structure for backward compatibility
         demographics = root.find(".//inferred_demographics")
         if demographics is not None:
             age_elem = demographics.find(".//age_group")

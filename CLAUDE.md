@@ -90,10 +90,58 @@ fix(schema): correct priority ranking validation logic
 4. Commit with descriptive message
 5. Push to appropriate branch
 
+## Documentation Maintenance Guidelines
+
+### Documentation Organization
+- **ALWAYS place new documentation in the `docs/` directory**
+- **Use timestamped log entries** in the main log files rather than creating new files
+- **Four main log files**: USER_GUIDE.md, TECHNICAL_LOG.md, RESEARCH_LOG.md, PROJECT_LOG.md
+- **Add timestamped sections** (YYYY-MM-DD HH:MM format) when making significant updates
+- Legacy files moved to `docs/legacy/` and `docs/roadmap/` directories
+
+### Documentation Standards
+- Use GitHub-flavored Markdown format
+- Include clear headers and table of contents for longer documents
+- Add cross-references between related documents
+- Keep documentation up-to-date with code changes
+- Include practical examples and usage instructions
+
+### When Adding Documentation
+1. **Choose appropriate log file**:
+   - Setup/usage info → `USER_GUIDE.md`
+   - Technical implementation → `TECHNICAL_LOG.md`
+   - Research methodology/findings → `RESEARCH_LOG.md`
+   - Project planning/decisions → `PROJECT_LOG.md`
+
+2. **Add timestamped entry**:
+   - Use format: `## YYYY-MM-DD HH:MM - Brief Description`
+   - Include relevant technical details, decisions, or findings
+   - Reference previous entries when building on earlier work
+
+3. **Update existing entries**:
+   - Update USER_GUIDE.md when configuration changes
+   - Add to TECHNICAL_LOG.md when implementing new features
+   - Document research findings in RESEARCH_LOG.md as analysis progresses
+
+### Documentation Types
+- **User Documentation**: How to use features (guides, tutorials)
+- **Technical Documentation**: Implementation details, architecture
+- **Process Documentation**: Workflows, standards, procedures
+- **Research Documentation**: Findings, analysis, methodology
+- **Reference Documentation**: API docs, configuration options
+
+### Maintenance Responsibilities
+- Update documentation when making code changes
+- Review and refresh documentation quarterly
+- Remove outdated information promptly
+- Ensure all links work and references are accurate
+- Keep the documentation index current
+
 ## Important Notes
 
 - This is a research project, not a software development project
-- No build, test, or lint commands are needed
+- Testing framework available via `python run_tests.py pipeline` (see `docs/TECHNICAL_LOG.md`)
 - Focus on data analysis and qualitative research methods when assisting
 - Respect the sensitivity of interview data and maintain participant confidentiality
 - Follow git best practices to maintain clear project history
+- **Always update documentation** when making significant changes

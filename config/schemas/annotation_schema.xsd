@@ -1,0 +1,544 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+           elementFormDefault="qualified"
+           attributeFormDefault="unqualified">
+
+  <!-- Root element -->
+  <xs:element name="annotation_result" type="AnnotationResultType"/>
+
+  <!-- Main annotation result type -->
+  <xs:complexType name="AnnotationResultType">
+    <xs:sequence>
+      <xs:element name="interview_level" type="InterviewLevelType"/>
+      <xs:element name="turn_level" type="TurnLevelType"/>
+      <xs:element name="processing_metadata" type="ProcessingMetadataType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Interview Level Analysis -->
+  <xs:complexType name="InterviewLevelType">
+    <xs:sequence>
+      <xs:element name="metadata" type="MetadataType"/>
+      <xs:element name="participant_profile" type="ParticipantProfileType"/>
+      <xs:element name="uncertainty_tracking" type="UncertaintyTrackingType"/>
+      <xs:element name="priority_summary" type="PrioritySummaryType"/>
+      <xs:element name="narrative_features" type="NarrativeFeaturesType"/>
+      <xs:element name="key_narratives" type="KeyNarrativesType"/>
+      <xs:element name="analytical_notes" type="AnalyticalNotesType"/>
+      <xs:element name="interview_dynamics" type="InterviewDynamicsType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Metadata -->
+  <xs:complexType name="MetadataType">
+    <xs:sequence>
+      <xs:element name="interview_id" type="xs:string"/>
+      <xs:element name="date" type="xs:date"/>
+      <xs:element name="location" type="LocationType"/>
+      <xs:element name="duration_minutes" type="xs:positiveInteger"/>
+      <xs:element name="interviewer_ids" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="LocationType">
+    <xs:sequence>
+      <xs:element name="municipality" type="xs:string"/>
+      <xs:element name="department" type="xs:string"/>
+      <xs:element name="locality_size" type="LocalitySizeType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="LocalitySizeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="rural"/>
+      <xs:enumeration value="small_town"/>
+      <xs:enumeration value="medium_city"/>
+      <xs:enumeration value="large_city"/>
+      <xs:enumeration value="metropolitan"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Participant Profile -->
+  <xs:complexType name="ParticipantProfileType">
+    <xs:sequence>
+      <xs:element name="age_range" type="AgeRangeType"/>
+      <xs:element name="gender" type="GenderType"/>
+      <xs:element name="organizational_affiliation" type="xs:string"/>
+      <xs:element name="self_described_political_stance" type="PoliticalStanceType"/>
+      <xs:element name="occupation_sector" type="OccupationSectorType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="AgeRangeType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="18-29"/>
+      <xs:enumeration value="30-44"/>
+      <xs:enumeration value="45-59"/>
+      <xs:enumeration value="60-74"/>
+      <xs:enumeration value="75+"/>
+      <xs:enumeration value="not_specified"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="GenderType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="male"/>
+      <xs:enumeration value="female"/>
+      <xs:enumeration value="non_binary"/>
+      <xs:enumeration value="not_specified"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PoliticalStanceType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="left"/>
+      <xs:enumeration value="center_left"/>
+      <xs:enumeration value="center"/>
+      <xs:enumeration value="center_right"/>
+      <xs:enumeration value="right"/>
+      <xs:enumeration value="not_specified"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="OccupationSectorType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="public_sector"/>
+      <xs:enumeration value="private_sector"/>
+      <xs:enumeration value="agriculture"/>
+      <xs:enumeration value="education"/>
+      <xs:enumeration value="healthcare"/>
+      <xs:enumeration value="retail"/>
+      <xs:enumeration value="manufacturing"/>
+      <xs:enumeration value="services"/>
+      <xs:enumeration value="unemployed"/>
+      <xs:enumeration value="retired"/>
+      <xs:enumeration value="student"/>
+      <xs:enumeration value="not_specified"/>
+      <xs:enumeration value="other"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Uncertainty Tracking -->
+  <xs:complexType name="UncertaintyTrackingType">
+    <xs:sequence>
+      <xs:element name="overall_confidence" type="ConfidenceType"/>
+      <xs:element name="uncertainty_flags" type="UncertaintyFlagsType"/>
+      <xs:element name="uncertainty_narrative" type="xs:string"/>
+      <xs:element name="contextual_gaps" type="ContextualGapsType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="ConfidenceType">
+    <xs:restriction base="xs:decimal">
+      <xs:minInclusive value="0.0"/>
+      <xs:maxInclusive value="1.0"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="UncertaintyFlagsType">
+    <xs:sequence>
+      <xs:element name="flag" type="UncertaintyFlagType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="UncertaintyFlagType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="unclear_priorities"/>
+      <xs:enumeration value="ambiguous_responses"/>
+      <xs:enumeration value="contradictory_statements"/>
+      <xs:enumeration value="incomplete_information"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="ContextualGapsType">
+    <xs:sequence>
+      <xs:element name="gap" type="ContextualGapType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ContextualGapType">
+    <xs:sequence>
+      <xs:element name="type" type="GapType"/>
+      <xs:element name="description" type="xs:string"/>
+      <xs:element name="impact" type="ImpactLevelType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="GapType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="local_knowledge"/>
+      <xs:enumeration value="historical_context"/>
+      <xs:enumeration value="institutional_knowledge"/>
+      <xs:enumeration value="cultural_reference"/>
+      <xs:enumeration value="political_context"/>
+      <xs:enumeration value="personal_backstory"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="ImpactLevelType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="minor"/>
+      <xs:enumeration value="moderate"/>
+      <xs:enumeration value="major"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Priority Summary -->
+  <xs:complexType name="PrioritySummaryType">
+    <xs:sequence>
+      <xs:element name="national_priorities" type="PrioritiesType"/>
+      <xs:element name="local_priorities" type="PrioritiesType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PrioritiesType">
+    <xs:sequence>
+      <xs:element name="priority" type="PriorityType" minOccurs="1" maxOccurs="3"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="PriorityType">
+    <xs:sequence>
+      <xs:element name="theme" type="xs:string"/>
+      <xs:element name="specific_issues" type="SpecificIssuesType"/>
+      <xs:element name="narrative_elaboration" type="xs:string"/>
+    </xs:sequence>
+    <xs:attribute name="rank" type="PriorityRankType" use="required"/>
+  </xs:complexType>
+
+  <xs:simpleType name="PriorityRankType">
+    <xs:restriction base="xs:positiveInteger">
+      <xs:minInclusive value="1"/>
+      <xs:maxInclusive value="3"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ENFORCED: Single format for specific_issues -->
+  <xs:complexType name="SpecificIssuesType">
+    <xs:sequence>
+      <xs:element name="issue" type="xs:string" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Narrative Features -->
+  <xs:complexType name="NarrativeFeaturesType">
+    <xs:sequence>
+      <xs:element name="dominant_frame" type="DominantFrameType"/>
+      <xs:element name="frame_narrative" type="xs:string"/>
+      <xs:element name="temporal_orientation" type="TemporalOrientationType"/>
+      <xs:element name="temporal_narrative" type="xs:string"/>
+      <xs:element name="agency_attribution" type="AgencyAttributionType"/>
+      <xs:element name="solution_orientation" type="SolutionOrientationType"/>
+      <xs:element name="solution_narrative" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="DominantFrameType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="decline"/>
+      <xs:enumeration value="progress"/>
+      <xs:enumeration value="stagnation"/>
+      <xs:enumeration value="mixed"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TemporalOrientationType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="past_focused"/>
+      <xs:enumeration value="present_focused"/>
+      <xs:enumeration value="future_focused"/>
+      <xs:enumeration value="mixed"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="AgencyAttributionType">
+    <xs:sequence>
+      <xs:element name="government_responsibility" type="ConfidenceType"/>
+      <xs:element name="individual_responsibility" type="ConfidenceType"/>
+      <xs:element name="structural_factors" type="ConfidenceType"/>
+      <xs:element name="agency_narrative" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="SolutionOrientationType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="very_specific"/>
+      <xs:enumeration value="highly_specific"/>
+      <xs:enumeration value="moderately_specific"/>
+      <xs:enumeration value="vague"/>
+      <xs:enumeration value="no_solutions"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Key Narratives -->
+  <xs:complexType name="KeyNarrativesType">
+    <xs:sequence>
+      <xs:element name="identity_narrative" type="xs:string"/>
+      <xs:element name="problem_narrative" type="xs:string"/>
+      <xs:element name="hope_narrative" type="xs:string"/>
+      <xs:element name="memorable_quotes" type="MemorableQuotesType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="MemorableQuotesType">
+    <xs:sequence>
+      <xs:element name="quote" type="xs:string" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Analytical Notes -->
+  <xs:complexType name="AnalyticalNotesType">
+    <xs:sequence>
+      <xs:element name="tensions_contradictions" type="xs:string"/>
+      <xs:element name="silences_omissions" type="xs:string"/>
+      <xs:element name="interviewer_reflections" type="xs:string"/>
+      <xs:element name="connections_to_broader_themes" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Interview Dynamics -->
+  <xs:complexType name="InterviewDynamicsType">
+    <xs:sequence>
+      <xs:element name="rapport" type="QualityLevelType"/>
+      <xs:element name="rapport_narrative" type="xs:string"/>
+      <xs:element name="participant_engagement" type="EngagementLevelType"/>
+      <xs:element name="engagement_narrative" type="xs:string"/>
+      <xs:element name="coherence" type="CoherenceLevelType"/>
+      <xs:element name="coherence_narrative" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="QualityLevelType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="poor"/>
+      <xs:enumeration value="fair"/>
+      <xs:enumeration value="good"/>
+      <xs:enumeration value="excellent"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="EngagementLevelType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="disengaged"/>
+      <xs:enumeration value="somewhat_engaged"/>
+      <xs:enumeration value="engaged"/>
+      <xs:enumeration value="highly_engaged"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CoherenceLevelType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="incoherent"/>
+      <xs:enumeration value="somewhat_coherent"/>
+      <xs:enumeration value="coherent"/>
+      <xs:enumeration value="highly_coherent"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Turn Level Analysis -->
+  <xs:complexType name="TurnLevelType">
+    <xs:sequence>
+      <xs:element name="turn" type="TurnType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TurnType">
+    <xs:sequence>
+      <xs:element name="turn_id" type="xs:positiveInteger"/>
+      <xs:element name="speaker" type="SpeakerType"/>
+      <xs:element name="text" type="xs:string"/>
+      <xs:element name="uncertainty_tracking" type="TurnUncertaintyType"/>
+      <xs:element name="functional_annotation" type="FunctionalAnnotationType"/>
+      <xs:element name="content_annotation" type="ContentAnnotationType"/>
+      <xs:element name="evidence_annotation" type="EvidenceAnnotationType"/>
+      <xs:element name="stance_annotation" type="StanceAnnotationType"/>
+      <xs:element name="turn_narrative_summary" type="xs:string"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="SpeakerType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="participant"/>
+      <xs:enumeration value="interviewer"/>
+      <xs:enumeration value="moderator"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="TurnUncertaintyType">
+    <xs:sequence>
+      <xs:element name="coding_confidence" type="ConfidenceType"/>
+      <xs:choice>
+        <xs:element name="uncertainty_markers" type="TurnUncertaintyMarkersType"/>
+        <xs:element name="uncertain_markers" type="TurnUncertaintyMarkersType"/>
+      </xs:choice>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TurnUncertaintyMarkersType">
+    <xs:sequence>
+      <xs:element name="ambiguous_function" type="xs:boolean"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="FunctionalAnnotationType">
+    <xs:sequence>
+      <xs:element name="primary_function" type="FunctionType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="FunctionType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="greeting"/>
+      <xs:enumeration value="problem_identification"/>
+      <xs:enumeration value="solution_proposal"/>
+      <xs:enumeration value="agreement"/>
+      <xs:enumeration value="disagreement"/>
+      <xs:enumeration value="question"/>
+      <xs:enumeration value="clarification"/>
+      <xs:enumeration value="narrative"/>
+      <xs:enumeration value="evaluation"/>
+      <xs:enumeration value="closing"/>
+      <xs:enumeration value="elaboration"/>
+      <xs:enumeration value="meta_commentary"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- ENFORCED: Single format for topics -->
+  <xs:complexType name="ContentAnnotationType">
+    <xs:sequence>
+      <xs:element name="topics" type="TopicsType"/>
+      <xs:element name="topic_narrative" type="xs:string"/>
+      <xs:element name="geographic_scope" type="GeographicScopeType"/>
+      <xs:element name="temporal_reference" type="TemporalReferenceType" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="TopicsType">
+    <xs:sequence>
+      <xs:element name="topic" type="xs:string" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="GeographicScopeType">
+    <xs:sequence>
+      <xs:element name="scope" type="GeographicLevelType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="GeographicLevelType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="local"/>
+      <xs:enumeration value="regional"/>
+      <xs:enumeration value="national"/>
+      <xs:enumeration value="international"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="TemporalReferenceType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="past"/>
+      <xs:enumeration value="present"/>
+      <xs:enumeration value="future"/>
+      <xs:enumeration value="comparison_past_present"/>
+      <xs:enumeration value="comparison_present_future"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="EvidenceAnnotationType">
+    <xs:sequence>
+      <xs:element name="evidence_type" type="EvidenceType"/>
+      <xs:element name="evidence_narrative" type="xs:string"/>
+      <xs:element name="specificity" type="SpecificityType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="EvidenceType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="personal_experience"/>
+      <xs:enumeration value="community_observation"/>
+      <xs:enumeration value="statistics"/>
+      <xs:enumeration value="expert_opinion"/>
+      <xs:enumeration value="media_report"/>
+      <xs:enumeration value="government_data"/>
+      <xs:enumeration value="hearsay"/>
+      <xs:enumeration value="general_assertion"/>
+      <xs:enumeration value="none"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="SpecificityType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="very_specific"/>
+      <xs:enumeration value="somewhat_specific"/>
+      <xs:enumeration value="general"/>
+      <xs:enumeration value="vague"/>
+      <xs:enumeration value="none"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="StanceAnnotationType">
+    <xs:sequence>
+      <xs:element name="emotional_valence" type="EmotionalValenceType"/>
+      <xs:element name="emotional_intensity" type="ConfidenceType"/>
+      <xs:element name="specific_emotions" type="SpecificEmotionsType" minOccurs="0"/>
+      <xs:element name="emotional_narrative" type="xs:string"/>
+      <xs:element name="certainty" type="CertaintyType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="EmotionalValenceType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="positive"/>
+      <xs:enumeration value="negative"/>
+      <xs:enumeration value="neutral"/>
+      <xs:enumeration value="mixed"/>
+      <xs:enumeration value="mostly_positive"/>
+      <xs:enumeration value="mostly_negative"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="CertaintyType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="very_certain"/>
+      <xs:enumeration value="certain"/>
+      <xs:enumeration value="uncertain"/>
+      <xs:enumeration value="very_uncertain"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="SpecificEmotionsType">
+    <xs:sequence>
+      <xs:element name="emotion" type="SpecificEmotionType" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="SpecificEmotionType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="frustration"/>
+      <xs:enumeration value="anger"/>
+      <xs:enumeration value="fear"/>
+      <xs:enumeration value="hope"/>
+      <xs:enumeration value="gratitude"/>
+      <xs:enumeration value="nostalgia"/>
+      <xs:enumeration value="pride"/>
+      <xs:enumeration value="disappointment"/>
+      <xs:enumeration value="concern"/>
+      <xs:enumeration value="resignation"/>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Processing Metadata -->
+  <xs:complexType name="ProcessingMetadataType">
+    <xs:sequence>
+      <xs:element name="model_provider" type="xs:string"/>
+      <xs:element name="model_name" type="xs:string"/>
+      <xs:element name="timestamp" type="xs:dateTime"/>
+      <xs:element name="processing_time" type="xs:decimal"/>
+      <xs:element name="attempts" type="xs:positiveInteger"/>
+      <xs:element name="temperature" type="xs:decimal"/>
+      <xs:element name="interview_word_count" type="xs:positiveInteger"/>
+      <xs:element name="confidence" type="ConfidenceType"/>
+    </xs:sequence>
+  </xs:complexType>
+
+</xs:schema>
