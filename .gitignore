@@ -77,3 +77,9 @@ models/
 results/
 outputs/
 reports/participant_*
+
+# Experimental annotation results (may contain sensitive interview data)
+tests/annotation_experiments/results/
+*_annotation_result*.json
+adaptive_schema_result_*.json
+full_interview_annotation_*.json
