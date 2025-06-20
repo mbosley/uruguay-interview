@@ -70,7 +70,7 @@ class DatabaseConfig:
         """Get database URL, preferring environment variable."""
         return os.getenv(
             "DATABASE_URL",
-            f"postgresql://{self.user}@{self.host}:{self.port}/{self.name}"
+            f"sqlite:///data/uruguay_interviews.db"
         )
 
 

@@ -79,7 +79,24 @@ outputs/
 reports/participant_*
 
 # Experimental annotation results (may contain sensitive interview data)
-tests/annotation_experiments/results/
+tests/annotation_experiments/
 *_annotation_result*.json
 adaptive_schema_result_*.json
 full_interview_annotation_*.json
+
+# Test files
+test_*.py
+test_*.json
+test_*.db
+test_*.html
+
+# Individual interview HTML files (keep only index)
+interview_[0-9]*.html
+
+# Temporary annotation files
+enhanced_annotation_*.json
+multipass_annotation_*.json
+optimized_annotation_*.json
+
+# Cleanup script (not needed in repo)
+cleanup_repository.py

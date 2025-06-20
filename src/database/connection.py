@@ -10,7 +10,7 @@ from sqlalchemy.orm import sessionmaker, Session
 from sqlalchemy.pool import Pool
 
 from src.config.config_loader import get_config
-from src.database.models import Base
+from src.database.models_enhanced import Base
 
 logger = logging.getLogger(__name__)
 
