@@ -11,7 +11,7 @@ import sys
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.database.models_mft import CREATE_TABLES_SQL
+from src.database.models import CREATE_TABLES_SQL
 
 
 def add_mft_tables():

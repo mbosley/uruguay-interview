@@ -1,0 +1,729 @@
+{
+  "validation_summary": {
+    "total_annotations": 36,
+    "successful_validations": 36,
+    "validation_success_rate": 100.0,
+    "quality_distribution": {
+      "high_quality": 34,
+      "medium_quality": 2,
+      "low_quality": 0
+    },
+    "quality_percentages": {
+      "high_quality_rate": 94.44444444444444,
+      "medium_quality_rate": 5.555555555555555,
+      "low_quality_rate": 0.0
+    }
+  },
+  "performance_metrics": {
+    "total_cost": 0.28725209999999995,
+    "avg_cost_per_interview": 0.007979225,
+    "total_processing_time_minutes": 148.97259625196457,
+    "avg_processing_time_seconds": 248.28766041994095,
+    "total_turns_analyzed": 790,
+    "total_expected_turns": 796,
+    "overall_coverage_rate": 99.2462311557789
+  },
+  "quality_metrics": {
+    "avg_quality_score": 0.9916666666666667,
+    "min_quality_score": 0.85,
+    "max_quality_score": 1.0,
+    "avg_coverage_percentage": 99.11181561996779,
+    "min_coverage_percentage": 81.25,
+    "max_coverage_percentage": 100.0,
+    "perfect_coverage_count": 33,
+    "avg_confidence": 0.8500000000000005
+  },
+  "detailed_results": [
+    {
+      "interview_id": "082",
+      "file_path": "data/processed/annotations/production/082_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.006009800000000001,
+        "api_calls": 4,
+        "processing_time": 71.86765599250793
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.089292"
+    },
+    {
+      "interview_id": "060",
+      "file_path": "data/processed/annotations/production/060_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 52,
+        "total_turns": 52,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 52,
+        "cost": 0.0158885,
+        "api_calls": 10,
+        "processing_time": 188.18514680862427
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.090823"
+    },
+    {
+      "interview_id": "076",
+      "file_path": "data/processed/annotations/production/076_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.0047338,
+        "api_calls": 3,
+        "processing_time": 49.575597047805786
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.091360"
+    },
+    {
+      "interview_id": "068",
+      "file_path": "data/processed/annotations/production/068_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0060654,
+        "api_calls": 4,
+        "processing_time": 75.29595589637756
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.091984"
+    },
+    {
+      "interview_id": "062",
+      "file_path": "data/processed/annotations/production/062_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0061256,
+        "api_calls": 4,
+        "processing_time": 79.1281840801239
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.092524"
+    },
+    {
+      "interview_id": "074",
+      "file_path": "data/processed/annotations/production/074_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.007059,
+        "api_calls": 4,
+        "processing_time": 83.44451189041138
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.092982"
+    },
+    {
+      "interview_id": "058",
+      "file_path": "data/processed/annotations/production/058_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.0046654,
+        "api_calls": 3,
+        "processing_time": 37.23171901702881
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.093376"
+    },
+    {
+      "interview_id": "080",
+      "file_path": "data/processed/annotations/production/080_final_annotation.json",
+      "quality_score": 0.85,
+      "quality_issues": [
+        "Low turn coverage: 81.2%"
+      ],
+      "metrics": {
+        "coverage_percentage": 81.25,
+        "analyzed_turns": 13,
+        "total_turns": 16,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 13,
+        "cost": 0.0055011,
+        "api_calls": 4,
+        "processing_time": 57.197168827056885
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.094011"
+    },
+    {
+      "interview_id": "088",
+      "file_path": "data/processed/annotations/production/088_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.004555600000000001,
+        "api_calls": 3,
+        "processing_time": 51.28207206726074
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.094341"
+    },
+    {
+      "interview_id": "086",
+      "file_path": "data/processed/annotations/production/086_final_annotation.json",
+      "quality_score": 0.85,
+      "quality_issues": [
+        "Low turn coverage: 87.5%"
+      ],
+      "metrics": {
+        "coverage_percentage": 87.5,
+        "analyzed_turns": 14,
+        "total_turns": 16,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 14,
+        "cost": 0.006031099999999999,
+        "api_calls": 4,
+        "processing_time": 81.36402797698975
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.094723"
+    },
+    {
+      "interview_id": "133",
+      "file_path": "data/processed/annotations/production/133_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0060256,
+        "api_calls": 4,
+        "processing_time": 61.23884725570679
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.095314"
+    },
+    {
+      "interview_id": "090",
+      "file_path": "data/processed/annotations/production/090_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.005942,
+        "api_calls": 4,
+        "processing_time": 68.0461540222168
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.095786"
+    },
+    {
+      "interview_id": "064",
+      "file_path": "data/processed/annotations/production/064_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.0048393,
+        "api_calls": 3,
+        "processing_time": 50.85450601577759
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.096096"
+    },
+    {
+      "interview_id": "072",
+      "file_path": "data/processed/annotations/production/072_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0061127,
+        "api_calls": 4,
+        "processing_time": 67.92069029808044
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.096624"
+    },
+    {
+      "interview_id": "078",
+      "file_path": "data/processed/annotations/production/078_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0056954,
+        "api_calls": 4,
+        "processing_time": 712.6941041946411
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.097278"
+    },
+    {
+      "interview_id": "066",
+      "file_path": "data/processed/annotations/production/066_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.0043518,
+        "api_calls": 3,
+        "processing_time": 56.96050190925598
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.097699"
+    },
+    {
+      "interview_id": "070",
+      "file_path": "data/processed/annotations/production/070_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 99.27536231884058,
+        "analyzed_turns": 137,
+        "total_turns": 138,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 137,
+        "cost": 0.037945700000000006,
+        "api_calls": 24,
+        "processing_time": 420.8772768974304
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.099428"
+    },
+    {
+      "interview_id": "084",
+      "file_path": "data/processed/annotations/production/084_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.005831200000000001,
+        "api_calls": 4,
+        "processing_time": 712.7006161212921
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.099929"
+    },
+    {
+      "interview_id": "092",
+      "file_path": "data/processed/annotations/production/092_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.0046133,
+        "api_calls": 3,
+        "processing_time": 50.148751735687256
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.100289"
+    },
+    {
+      "interview_id": "069",
+      "file_path": "data/processed/annotations/production/069_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0060486,
+        "api_calls": 4,
+        "processing_time": 59.59710693359375
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.100729"
+    },
+    {
+      "interview_id": "083",
+      "file_path": "data/processed/annotations/production/083_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.006215699999999999,
+        "api_calls": 4,
+        "processing_time": 76.57345581054688
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.101198"
+    },
+    {
+      "interview_id": "077",
+      "file_path": "data/processed/annotations/production/077_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 45,
+        "total_turns": 45,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 45,
+        "cost": 0.0136657,
+        "api_calls": 9,
+        "processing_time": 712.7007961273193
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.102057"
+    },
+    {
+      "interview_id": "061",
+      "file_path": "data/processed/annotations/production/061_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.006511100000000001,
+        "api_calls": 4,
+        "processing_time": 66.73680305480957
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.102516"
+    },
+    {
+      "interview_id": "089",
+      "file_path": "data/processed/annotations/production/089_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 51,
+        "total_turns": 51,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 51,
+        "cost": 0.015798700000000002,
+        "api_calls": 10,
+        "processing_time": 633.9964311122894
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.103410"
+    },
+    {
+      "interview_id": "075",
+      "file_path": "data/processed/annotations/production/075_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.0044313,
+        "api_calls": 3,
+        "processing_time": 49.48318290710449
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.103815"
+    },
+    {
+      "interview_id": "063",
+      "file_path": "data/processed/annotations/production/063_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.003981800000000001,
+        "api_calls": 3,
+        "processing_time": 633.9514701366425
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.104173"
+    },
+    {
+      "interview_id": "059",
+      "file_path": "data/processed/annotations/production/059_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0068207,
+        "api_calls": 4,
+        "processing_time": 69.98692202568054
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.104664"
+    },
+    {
+      "interview_id": "091",
+      "file_path": "data/processed/annotations/production/091_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.0039671,
+        "api_calls": 3,
+        "processing_time": 633.9561059474945
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.104979"
+    },
+    {
+      "interview_id": "087",
+      "file_path": "data/processed/annotations/production/087_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0052535,
+        "api_calls": 4,
+        "processing_time": 712.7493507862091
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.105441"
+    },
+    {
+      "interview_id": "132",
+      "file_path": "data/processed/annotations/production/132_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 8,
+        "total_turns": 8,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 8,
+        "cost": 0.0043839000000000005,
+        "api_calls": 3,
+        "processing_time": 47.71170783042908
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.105814"
+    },
+    {
+      "interview_id": "073",
+      "file_path": "data/processed/annotations/production/073_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 14,
+        "total_turns": 14,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 14,
+        "cost": 0.0054585,
+        "api_calls": 4,
+        "processing_time": 712.6976490020752
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.106240"
+    },
+    {
+      "interview_id": "065",
+      "file_path": "data/processed/annotations/production/065_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 78,
+        "total_turns": 78,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 78,
+        "cost": 0.0217291,
+        "api_calls": 14,
+        "processing_time": 633.9452090263367
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.107350"
+    },
+    {
+      "interview_id": "071",
+      "file_path": "data/processed/annotations/production/071_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0061422,
+        "api_calls": 4,
+        "processing_time": 62.68489694595337
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.108027"
+    },
+    {
+      "interview_id": "067",
+      "file_path": "data/processed/annotations/production/067_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.006118,
+        "api_calls": 4,
+        "processing_time": 67.34901118278503
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.108392"
+    },
+    {
+      "interview_id": "085",
+      "file_path": "data/processed/annotations/production/085_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 15,
+        "total_turns": 15,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 15,
+        "cost": 0.0062789000000000005,
+        "api_calls": 4,
+        "processing_time": 75.52732706069946
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.108805"
+    },
+    {
+      "interview_id": "079",
+      "file_path": "data/processed/annotations/production/079_final_annotation.json",
+      "quality_score": 1.0,
+      "quality_issues": [],
+      "metrics": {
+        "coverage_percentage": 100.0,
+        "analyzed_turns": 51,
+        "total_turns": 51,
+        "overall_confidence": 0.85,
+        "national_priorities_count": 3,
+        "local_priorities_count": 3,
+        "conversation_turns_count": 51,
+        "cost": 0.016455,
+        "api_calls": 10,
+        "processing_time": 712.6948611736298
+      },
+      "validation_timestamp": "2025-06-22T10:08:30.109668"
+    }
+  ],
+  "validation_timestamp": "2025-06-22T10:08:30.109743",
+  "input_directory": "data/processed/annotations/production",
+  "output_directory": "data/reports"
+}

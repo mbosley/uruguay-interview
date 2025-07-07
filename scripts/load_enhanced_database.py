@@ -14,7 +14,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.database.connection import get_db
-from src.database.models_enhanced import (
+from src.database.models import (
     Interview, Annotation, ParticipantProfile, NarrativeFeatures,
     KeyNarratives, InterviewDynamics, AnalyticalSynthesis, Priority,
     Turn, TurnFunctionalAnalysis, TurnContentAnalysis, TurnEvidenceAnalysis,

@@ -15,7 +15,7 @@ import io
 project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
-from src.dashboard.interactive_enhanced_app import InteractiveDashboard
+from src.dashboard.app import InteractiveDashboard
 from src.dashboard.research_analytics import show_research_analytics_page
 from src.dashboard.quote_browser import show_quote_browser_page
 

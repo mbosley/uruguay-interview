@@ -21,7 +21,7 @@ sys.path.insert(0, str(project_root))
 
 from src.pipeline.ingestion.document_processor import DocumentProcessor
 from src.pipeline.annotation.multipass_annotator import MultiPassAnnotator
-from src.pipeline.annotation.moral_foundations_analyzer import MoralFoundationsAnalyzer
+from src.pipeline.annotation.mft_analyzer import MoralFoundationsAnalyzer
 from src.database.connection import get_db_connection
 
 # Configure logging
