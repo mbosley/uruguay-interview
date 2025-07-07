@@ -247,7 +247,7 @@ The system implements a comprehensive 6-dimensional analysis framework:
 ## 📚 Documentation Index
 
 ### 🗺️ Project Roadmaps
-- **[Master Project Roadmap](docs/roadmap/PROJECT_ROADMAP.md)** - Complete project overview, timeline, and training framework
+- **[Project Roadmap](ROADMAP.md)** - Complete project overview, timeline, and training framework
 - **[AI Annotation Framework Roadmap](docs/roadmap/ANNOTATION_FRAMEWORK_ROADMAP.md)** - Core annotation engine development plan
 - **[WhatsApp AI Follow-up Roadmap](docs/roadmap/WHATSAPP_AI_FOLLOWUP_ROADMAP.md)** - Conversational AI system for continuous engagement
 - **[Digital Twin Research Roadmap](docs/roadmap/DIGITAL_TWIN_RESEARCH_ROADMAP.md)** - Individual political reasoning models
