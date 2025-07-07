@@ -107,25 +107,81 @@ See [MFT Pipeline Guide](docs/HOW_TO_RUN_MFT.md) for detailed instructions.
 
 ## 📁 Project Structure
 
-```
-uruguay-interview/
-├── config/                 # Configuration files
-│   ├── prompts/           # AI prompts and schemas
-│   ├── database/          # Database schemas
-│   └── dashboards/        # Dashboard configurations
-├── src/                   # Source code
-│   ├── pipeline/          # Core annotation pipeline
-│   ├── analysis/          # Analysis components
-│   ├── dashboards/        # Dashboard generation
-│   ├── followup/          # WhatsApp AI system
-│   └── research/          # Academic research components
-├── data/                  # Data directory (gitignored)
-├── tests/                 # Test suite
-├── scripts/               # Operational scripts
-├── notebooks/             # Jupyter notebooks
-├── docs/                  # Documentation
-└── deliverables/          # Stakeholder outputs
-```
+### Core Directories
+
+#### `/src` - Source Code
+- **`/pipeline`** - Data processing pipeline
+  - `/annotation` - AI annotation engines (JSON mode, multipass, MFT analyzer)
+  - `/ingestion` - Document processing and interview loading
+  - `/extraction` - Data extraction from annotations
+  - `/parsing` - Interview text parsing
+- **`/database`** - Database models and connection management
+- **`/dashboard`** - Streamlit dashboard applications
+- **`/cli`** - Command-line interface tools
+- **`/config`** - Configuration management
+- **`/analysis`** - Analysis components
+- **`/followup`** - WhatsApp AI system
+- **`/research`** - Academic research components
+
+#### `/data` - Data Storage (git-ignored)
+- **`/raw/interviews`** - Original interview files (.docx, .odt)
+- **`/processed`** - Processed data
+  - `/interviews_txt` - Plain text versions
+  - `/annotations/production` - Final annotations
+- **`/exports`** - Export files (CSV, Excel)
+- **`uruguay_interviews.db`** - SQLite database
+
+#### `/config` - Configuration Files
+- **`/prompts`** - Annotation prompts and schemas
+- **`/schemas`** - XSD validation schemas
+- **`settings.py`** - Application settings
+- **`config.yaml`** - Main configuration
+
+#### `/scripts` - Utility Scripts
+- **`annotate_interviews.py`** - Production annotation with MFT
+- Database management utilities
+- Export and visualization tools
+- Dashboard launchers
+
+#### `/tests` - Test Suite
+- **`/unit`** - Unit tests
+- **`/integration`** - Integration tests
+- **`/e2e`** - End-to-end tests
+- **`/fixtures`** - Test data
+
+#### `/docs` - Documentation
+- **`/technical`** - Technical documentation
+- **`/roadmap`** - Project roadmaps
+- **`/database`** - Database schema docs
+- **`/legacy`** - Archived documentation
+- **`/pitch`** - Project proposals
+
+#### `/archive` - Obsolete Files
+- Historical versions of scripts, models, and components
+- See `/archive/README.md` for details
+
+### Key Files
+
+- **`CLAUDE.md`** - Instructions for Claude Code and development guidelines
+- **`requirements.txt`** - Python dependencies
+- **`Makefile`** - Common operations and automation
+- **`config.yaml`** - Main configuration
+- **`run_chat.py`** - Launch chat interface
+- **`interview_annotations_index.html`** - HTML visualization index
+
+### Workflow
+
+1. **Ingestion**: Raw interviews (.docx/.odt) → Plain text
+2. **Annotation**: AI analysis using 6-dimensional framework (including MFT)
+3. **Storage**: Structured data → SQLite database
+4. **Visualization**: Interactive dashboards and HTML outputs
+
+### Current State
+
+- ✅ 37 interviews fully annotated with MFT dimension
+- ✅ Database populated with complete annotations
+- ✅ Interactive research dashboard functional
+- ✅ Production pipeline optimized for scale
 
 ## 🔧 Core Components
 
