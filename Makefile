@@ -40,14 +40,14 @@ help:
 	@echo ""
 	@echo "$(GREEN)Main Targets:$(NC)"
 	@echo "  setup         - Initialize environment and dependencies"
-	@echo "  check         - Verify system readiness"
+	@echo "  check         - Verify system readiness (includes MFT setup)"
 	@echo "  status        - Show current pipeline status"
-	@echo "  annotate      - Run production annotation (remaining interviews)"
+	@echo "  annotate      - Run production annotation with 6 dimensions (includes MFT)"
 	@echo "  validate      - Validate annotation quality"
 	@echo "  extract       - Extract structured data from annotations"
 	@echo "  extract-enhanced - Extract comprehensive data for enhanced schema"
 	@echo "  dashboard     - Generate research dashboard"
-	@echo "  deploy        - Full pipeline deployment"
+	@echo "  deploy        - Full pipeline deployment with MFT"
 	@echo ""
 	@echo "$(GREEN)Utility Targets:$(NC)"
 	@echo "  clean         - Clean temporary files and logs"
@@ -74,8 +74,16 @@ requirements-check: $(VENV)/bin/activate requirements.txt
 dirs:
 	@mkdir -p $(LOGS_DIR) $(REPORTS_DIR) $(PRODUCTION_DIR)
 
+## Ensure database exists with MFT tables
+db-check: setup
+	@echo "$(YELLOW)Checking database setup...$(NC)"
+	@test -f "$(DATA_DIR)/uruguay_interviews.db" || (echo "$(RED)❌ Database not found$(NC)" && exit 1)
+	@$(PYTHON_VENV) -c "import sqlite3; conn = sqlite3.connect('$(DATA_DIR)/uruguay_interviews.db'); cursor = conn.cursor(); cursor.execute(\"SELECT name FROM sqlite_master WHERE type='table' AND name='turn_moral_foundations'\"); result = cursor.fetchone(); exit(0 if result else 1)" || \
+		(echo "$(YELLOW)⚠️  MFT tables not found, creating...$(NC)" && $(PYTHON_VENV) scripts/add_mft_tables.py)
+	@echo "✅ Database ready with MFT support"
+
 ## Verify system readiness
-check: setup dirs
+check: setup dirs db-check
 	@echo "$(BLUE)🔍 System Readiness Check$(NC)"
 	@echo "=============================="
 	@$(PYTHON_VENV) -c "import openai; print('✅ OpenAI library available')" || (echo "$(RED)❌ OpenAI library missing$(NC)" && exit 1)
@@ -87,23 +95,27 @@ check: setup dirs
 
 ## Show current pipeline status
 status: setup
-	@echo "$(BLUE)📊 Pipeline Status$(NC)"
-	@echo "=================="
+	@echo "$(BLUE)📊 Pipeline Status (with MFT)$(NC)"
+	@echo "============================"
 	@$(PYTHON_VENV) scripts/pipeline_status.py
+	@echo ""
+	@echo "$(BLUE)🧬 MFT Integration Status:$(NC)"
+	@$(PYTHON_VENV) -c "import sqlite3; conn = sqlite3.connect('$(DATA_DIR)/uruguay_interviews.db'); cursor = conn.cursor(); cursor.execute('SELECT COUNT(*) FROM turn_moral_foundations'); mft_count = cursor.fetchone()[0]; print(f'  MFT annotations: {mft_count} turns')" 2>/dev/null || echo "  MFT annotations: 0 turns"
 
 ## Run production annotation pipeline
 annotate: check $(PRODUCTION_DIR)/annotation.lock
 
 $(PRODUCTION_DIR)/annotation.lock: setup
-	@echo "$(BLUE)🚀 Running Production Annotation$(NC)"
-	@echo "=================================="
+	@echo "$(BLUE)🚀 Running Production Annotation with MFT (6 Dimensions)$(NC)"
+	@echo "=================================================="
 	@echo "Workers: $(MAX_WORKERS), Budget: $$$(BUDGET_LIMIT)"
+	@echo "Dimensions: Functional, Content, Evidence, Emotional, Uncertainty, MFT"
 	@mkdir -p $(LOGS_DIR)
-	@timeout $(TIMEOUT) $(PYTHON_VENV) scripts/robust_annotate.py \
+	@timeout $(TIMEOUT) $(PYTHON_VENV) scripts/production_annotate_with_mft.py \
 		--max-workers $(MAX_WORKERS) \
 		--budget-limit $(BUDGET_LIMIT) \
 		--output-dir $(PRODUCTION_DIR) \
-		--log-file $(LOGS_DIR)/annotation_$$(date +%Y%m%d_%H%M%S).log \
+		--log-file $(LOGS_DIR)/annotation_mft_$$(date +%Y%m%d_%H%M%S).log \
 		|| (echo "$(YELLOW)⚠️  Annotation process stopped (timeout or completion)$(NC)")
 	@touch $@
 

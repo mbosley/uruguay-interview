@@ -309,6 +309,18 @@ Provide comprehensive analysis for each turn in this batch:
         "resolution_strategy": "participant_framing_privileged|context_from_other_turns|conservative_coding",
         "annotator_notes": "Additional concerns or observations"
       }},
+      "moral_foundations_analysis": {{
+        "reasoning": "Analysis of moral foundations invoked in this turn",
+        "care_harm": 0.0,
+        "fairness_cheating": 0.0,
+        "loyalty_betrayal": 0.0,
+        "authority_subversion": 0.0,
+        "sanctity_degradation": 0.0,
+        "liberty_oppression": 0.0,
+        "dominant_foundation": "none|care_harm|fairness_cheating|loyalty_betrayal|authority_subversion|sanctity_degradation|liberty_oppression",
+        "foundations_narrative": "How participant expresses moral concerns",
+        "mft_confidence": 0.0
+      }},
       "turn_significance": "Why this turn matters for understanding the participant"
     }}
   ]
@@ -320,6 +332,44 @@ CRITICAL REQUIREMENTS:
 3. Include uncertainty tracking and confidence scores
 4. Connect to previous context where relevant
 5. Return valid JSON only
+
+MORAL FOUNDATIONS ANALYSIS:
+For each turn, identify which of the 6 moral foundations are invoked:
+
+1. Care/Harm: Protection of vulnerable, suffering, compassion
+   - Spanish: "cuidar", "proteger", "sufrir", "dolor"
+   - Look for: children, elderly, healthcare, safety concerns
+
+2. Fairness/Cheating: Justice, equality, corruption
+   - Spanish: "justo", "corrupción", "derechos", "igualdad"
+   - Look for: unfairness, merit, equal treatment
+
+3. Loyalty/Betrayal: Community solidarity, abandonment
+   - Spanish: "abandonar", "unidos", "comunidad", "barrio"
+   - Look for: in-group loyalty, institutional betrayal
+
+4. Authority/Subversion: Respect, tradition, order
+   - Spanish: "respeto", "autoridad", "orden", "tradición"
+   - Look for: generational dynamics, law and order
+
+5. Sanctity/Degradation: Purity, moral decay, values
+   - Spanish: "valores", "moral", "degradación", "contaminar"
+   - Look for: disgust, religious language, corruption of youth
+
+6. Liberty/Oppression: Freedom, autonomy, control
+   - Spanish: "libertad", "control", "oprimir", "independencia"
+   - Look for: government restrictions, personal freedom
+
+Scoring (0.0-1.0):
+- 0.0: No evidence
+- 0.1-0.3: Subtle reference
+- 0.4-0.6: Clear theme
+- 0.7-1.0: Dominant theme
+
+Consider Uruguayan patterns:
+- State abandonment often combines Loyalty + Care
+- Economic complaints often invoke Fairness + Liberty
+- Community solidarity is highly valued
 
 Focus on faithful representation while achieving systematic analysis.
 """
