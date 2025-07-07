@@ -90,6 +90,21 @@ python -m src.cli.annotate costs
 python -m src.cli.annotate annotate interview.txt --provider openai --model gpt-4o-mini
 ```
 
+### Running MFT-Enhanced Analysis
+
+The Moral Foundations Theory (MFT) dimension is now integrated into the standard pipeline:
+
+```bash
+# Run full pipeline with MFT analysis
+make check      # Ensures database has MFT tables
+make annotate   # Runs production annotation with all 6 dimensions
+
+# Or run MFT pipeline directly
+python scripts/run_mft_pipeline.py
+```
+
+See [MFT Pipeline Guide](docs/HOW_TO_RUN_MFT.md) for detailed instructions.
+
 ## 📁 Project Structure
 
 ```
@@ -147,6 +162,17 @@ dashboard = ExecutiveDashboard()
 dashboard.update_with_latest_data()
 dashboard.export("deliverables/government/dashboards/executive.html")
 ```
+
+## 🔍 Analysis Framework
+
+The system implements a comprehensive 6-dimensional analysis framework:
+
+1. **Functional Analysis** - What speakers are doing (e.g., problem identification, solution proposing)
+2. **Content Analysis** - Topics discussed and geographic scope (national/local)
+3. **Evidence Analysis** - Types of support provided (personal experience, statistics, etc.)
+4. **Emotional Analysis** - Emotional tone and intensity in discourse
+5. **Uncertainty Tracking** - Confidence levels in coding decisions
+6. **Moral Foundations Theory** - Moral concerns invoked (care/harm, fairness, loyalty, etc.)
 
 ## 📊 Data Flow
 
