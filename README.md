@@ -54,7 +54,7 @@ cp .env.example .env
 # Edit .env with your API keys
 
 # Configure the pipeline (optional - defaults work out of box)
-# Edit config.yaml to set your preferred AI provider and settings
+# Edit settings.yaml to set your preferred AI provider and settings
 ```
 
 ### Configuration
@@ -62,7 +62,7 @@ cp .env.example .env
 The project uses a centralized configuration system:
 
 ```yaml
-# config.yaml
+# settings.yaml
 ai:
   provider: gemini              # Options: openai, anthropic, gemini
   model: gemini-2.0-flash      # Cheapest option at $0.000875/interview
@@ -135,7 +135,7 @@ See [MFT Pipeline Guide](docs/HOW_TO_RUN_MFT.md) for detailed instructions.
 - **`/prompts`** - Annotation prompts and schemas
 - **`/schemas`** - XSD validation schemas
 - **`settings.py`** - Application settings
-- **`config.yaml`** - Main configuration
+- **`settings.yaml`** - Main application settings
 
 #### `/scripts` - Utility Scripts
 - **`annotate_interviews.py`** - Production annotation with MFT
@@ -165,7 +165,7 @@ See [MFT Pipeline Guide](docs/HOW_TO_RUN_MFT.md) for detailed instructions.
 - **`CLAUDE.md`** - Instructions for Claude Code and development guidelines
 - **`requirements.txt`** - Python dependencies
 - **`Makefile`** - Common operations and automation
-- **`config.yaml`** - Main configuration
+- **`settings.yaml`** - Main application settings
 - **`demos/`** - Demo files and standalone visualizations
 
 ### Workflow

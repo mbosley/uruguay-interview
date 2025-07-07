@@ -125,20 +125,20 @@ class ConfigLoader:
         Initialize config loader.
         
         Args:
-            config_path: Path to YAML config file (defaults to project root config.yaml)
+            config_path: Path to YAML config file (defaults to project root settings.yaml)
         """
         self.config_path = config_path or self._find_config_file()
         self._config_data: Dict[str, Any] = {}
         self._config: Optional[Config] = None
     
     def _find_config_file(self) -> Path:
-        """Find config.yaml in project structure."""
+        """Find settings.yaml in project structure."""
         # Try multiple locations
         possible_paths = [
-            Path("config.yaml"),
-            Path("../config.yaml"),
-            Path("../../config.yaml"),
-            Path(__file__).parent.parent.parent / "config.yaml"
+            Path("settings.yaml"),
+            Path("../settings.yaml"),
+            Path("../../settings.yaml"),
+            Path(__file__).parent.parent.parent / "settings.yaml"
         ]
         
         for path in possible_paths:
@@ -146,7 +146,7 @@ class ConfigLoader:
                 return path.absolute()
         
         # Default to project root
-        return Path(__file__).parent.parent.parent / "config.yaml"
+        return Path(__file__).parent.parent.parent / "settings.yaml"
     
     def load(self) -> Config:
         """Load configuration from file and environment."""
