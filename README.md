@@ -166,8 +166,7 @@ See [MFT Pipeline Guide](docs/HOW_TO_RUN_MFT.md) for detailed instructions.
 - **`requirements.txt`** - Python dependencies
 - **`Makefile`** - Common operations and automation
 - **`config.yaml`** - Main configuration
-- **`run_chat.py`** - Launch chat interface
-- **`interview_annotations_index.html`** - HTML visualization index
+- **`demos/`** - Demo files and standalone visualizations
 
 ### Workflow
 
