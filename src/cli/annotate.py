@@ -15,7 +15,7 @@ from src.database.connection import init_database, get_db
 
 
 @click.group()
-@click.option('--config', '-c', help='Path to config.yaml file')
+@click.option('--config', '-c', help='Path to settings.yaml file')
 @click.option('--debug', is_flag=True, help='Enable debug mode')
 def cli(config: Optional[str], debug: bool):
     """Uruguay Interview Analysis CLI"""

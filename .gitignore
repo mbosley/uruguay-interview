@@ -100,3 +100,6 @@ optimized_annotation_*.json
 
 # Cleanup script (not needed in repo)
 cleanup_repository.py
+
+# claudepm marker file (local only)
+.claudepm

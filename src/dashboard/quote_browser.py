@@ -17,7 +17,7 @@ project_root = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.database.connection import get_db
-from src.database.models_enhanced import Interview, Priority, Turn, KeyNarratives
+from src.database.models import Interview, Priority, Turn, KeyNarratives
 
 class QuoteBrowser:
     """Advanced quote browsing and narrative analysis."""

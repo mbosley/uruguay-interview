@@ -250,6 +250,18 @@ Provide systematic analysis in JSON format following this enhanced schema:
           "resolution_strategy": "participant_framing_privileged|context_from_other_turns|conservative_coding",
           "annotator_notes": "Additional concerns or observations"
         }},
+        "moral_foundations_analysis": {{
+          "reasoning": "Analysis of moral foundations invoked",
+          "care_harm": 0.0,
+          "fairness_cheating": 0.0,
+          "loyalty_betrayal": 0.0,
+          "authority_subversion": 0.0,
+          "sanctity_degradation": 0.0,
+          "liberty_oppression": 0.0,
+          "dominant_foundation": "none|care_harm|fairness_cheating|loyalty_betrayal|authority_subversion|sanctity_degradation|liberty_oppression",
+          "foundations_narrative": "How moral concerns are expressed",
+          "mft_confidence": 0.0
+        }},
         "turn_significance": "Why this turn matters for understanding the participant"
       }}
     ]
@@ -293,6 +305,17 @@ CRITICAL REQUIREMENTS:
 7. Maintain analytical humility - interpret, don't judge
 8. Ground all interpretations in specific textual evidence
 9. Return valid JSON only - no other text
+
+MORAL FOUNDATIONS ANALYSIS (6th Dimension):
+Identify moral foundations in each turn:
+- Care/Harm: Protection, suffering ("cuidar", "sufrir", "proteger")
+- Fairness/Cheating: Justice, corruption ("justo", "corrupción", "derechos")
+- Loyalty/Betrayal: Community, abandonment ("abandonar", "comunidad", "unidos")
+- Authority/Subversion: Respect, tradition ("respeto", "autoridad", "orden")
+- Sanctity/Degradation: Purity, values ("valores", "moral", "contaminar")
+- Liberty/Oppression: Freedom, control ("libertad", "control", "oprimir")
+
+Score 0.0-1.0 based on intensity. Note Uruguayan patterns like state abandonment (Loyalty+Care).
 
 Focus on faithful representation while achieving systematic analysis. When uncertain, document the uncertainty rather than forcing false precision.
 """

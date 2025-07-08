@@ -10,7 +10,7 @@ project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
 
 from src.database.connection import get_db
-from src.database.models_enhanced import Interview, Turn
+from src.database.models import Interview, Turn
 
 def add_sample_text():
     """Add sample conversation text to a few interviews."""

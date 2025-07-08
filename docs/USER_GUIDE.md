@@ -18,7 +18,7 @@ pip install -r requirements.txt
 ```
 
 ### 3. Configuration
-Edit `config.yaml`:
+Edit `settings.yaml`:
 ```yaml
 database:
   url: "postgresql://user:password@localhost:5432/uruguay_interviews"
