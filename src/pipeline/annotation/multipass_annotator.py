@@ -13,6 +13,7 @@ from datetime import datetime
 
 from src.pipeline.ingestion.document_processor import InterviewDocument
 from src.config.config_loader import ConfigLoader
+from src.pipeline.annotation.citation_tracker import InsightCitation, CitationTracker
 
 logger = logging.getLogger(__name__)
 
@@ -202,6 +203,14 @@ Provide comprehensive interview-level analysis plus complete turn inventory in J
       "cultural_context_notes": "Local knowledge that would aid interpretation",
       "connections_to_broader_themes": "How this connects to broader social patterns",
       "analytical_confidence": 0.8
+    }},
+    "open_qualitative_notes": {{
+      "emergent_themes": "Unexpected themes or patterns not fitting standard categories",
+      "interpretive_insights": "Holistic interpretations beyond structured analysis",
+      "contextual_observations": "Important context about setting, mood, or dynamics",
+      "methodological_reflections": "Notes on interview quality, rapport, or limitations",
+      "areas_for_exploration": "Questions or themes warranting deeper investigation",
+      "striking_moments": "Memorable quotes or exchanges defying categorization"
     }}
   }},
   "turn_inventory": {{
@@ -321,7 +330,28 @@ Provide comprehensive analysis for each turn in this batch:
         "foundations_narrative": "How participant expresses moral concerns",
         "mft_confidence": 0.0
       }},
-      "turn_significance": "Why this turn matters for understanding the participant"
+      "citation_metadata": {{
+        "key_phrases": ["List of 2-5 important phrases from this turn"],
+        "semantic_tags": ["List of semantic labels like 'security_concern', 'economic_worry'"],
+        "quotable_segments": [
+          {{
+            "text": "Exact quote",
+            "start_char": 0,
+            "end_char": 50,
+            "importance": 0.9
+          }}
+        ],
+        "context_dependency": 0.7,
+        "standalone_clarity": 0.8
+      }},
+      "turn_significance": "Why this turn matters for understanding the participant",
+      "open_observations": {{
+        "unexpected_themes": "Themes or patterns not captured by standard categories",
+        "cultural_nuances": "Cultural or contextual observations requiring explanation",
+        "analytical_hunches": "Interpretive insights or hypotheses worth exploring",
+        "methodological_notes": "Observations about interview dynamics or data quality",
+        "quotable_moments": "Particularly striking expressions beyond the categories"
+      }}
     }}
   ]
 }}
@@ -371,8 +401,174 @@ Consider Uruguayan patterns:
 - Economic complaints often invoke Fairness + Liberty
 - Community solidarity is highly valued
 
+CITATION METADATA ANALYSIS:
+Additionally, for each turn provide citation_metadata:
+
+1. key_phrases: Extract 2-5 important phrases that capture the essence of this turn
+   - Prefer complete thoughts over fragments
+   - Include emotional expressions
+   - Capture specific claims or proposals
+
+2. semantic_tags: Apply standardized tags from these categories:
+   - Concerns: security_concern, economic_worry, health_anxiety, education_concern, infrastructure_complaint
+   - Emotions: hope_expression, frustration_statement, nostalgia_reference, pride_expression, fear_articulation
+   - Evidence: personal_experience, community_observation, statistical_claim, media_reference, historical_comparison
+   - Solutions: policy_proposal, individual_action, community_initiative, government_request
+
+3. quotable_segments: Identify the most important direct quotes
+   - Mark exact text boundaries
+   - Rate importance (0.0-1.0)
+   - Prefer self-contained statements
+
+4. context_dependency: How much this turn relies on previous turns (0.0-1.0)
+5. standalone_clarity: How understandable this turn is alone (0.0-1.0)
+
 Focus on faithful representation while achieving systematic analysis.
 """
+    
+    def create_interview_citation_prompt(self, interview_text: str, turn_annotations: List[Dict]) -> str:
+        """Create prompt for citation-aware interview insights."""
+        
+        # Format turns with IDs for reference
+        turns_text = "\n\n".join([
+            f"TURN {t['turn_id']} ({t.get('speaker', 'unknown')}):\n"
+            f"Text: {t.get('text', '')[:200]}...\n"
+            f"Semantic Tags: {t.get('citation_metadata', {}).get('semantic_tags', [])}\n"
+            f"Key Phrases: {[p['text'] for p in t.get('citation_metadata', {}).get('key_phrases', [])]}"
+            for t in turn_annotations
+        ])
+        
+        return f"""
+Based on the annotated turns provided, generate interview-level insights with citations.
+
+INTERVIEW CONTEXT:
+{interview_text[:1000]}...
+
+ANNOTATED TURNS:
+{turns_text}
+
+CRITICAL: For EVERY insight you generate, you MUST provide citations to specific turns.
+
+For each insight, provide:
+1. The insight itself (following the existing schema)
+2. Citation information:
+   - turn_ids: List of turn IDs that support this insight
+   - citation_details: For each cited turn:
+     - contribution_type: "primary_evidence" | "supporting" | "contextual" | "contradictory"
+     - quote: Relevant text from that turn (exact quote preferred)
+     - reason: Why this turn supports the insight
+
+Generate insights with citations in this format:
+{{
+  "citation_aware_insights": {{
+    "national_priorities": [{{
+      "rank": 1,
+      "theme": "security",
+      "specific_issues": ["neighborhood crime", "police presence"],
+      "emotional_intensity": 0.8,
+      "narrative_elaboration": "Description using participant's words",
+      "citations": {{
+        "turn_ids": [3, 7, 15],
+        "citation_details": [
+          {{
+            "turn_id": 3,
+            "contribution_type": "primary_evidence",
+            "quote": "I can't sleep at night worrying about break-ins",
+            "reason": "Direct expression of security concern"
+          }},
+          {{
+            "turn_id": 7,
+            "contribution_type": "supporting",
+            "quote": "We installed bars on all windows",
+            "reason": "Behavioral evidence of security concern"
+          }},
+          {{
+            "turn_id": 15,
+            "contribution_type": "contextual",
+            "quote": "The whole neighborhood feels unsafe",
+            "reason": "Community-level validation"
+          }}
+        ]
+      }}
+    }}],
+    "local_priorities": [...similar structure...],
+    "key_narratives": [{{
+      "narrative_type": "identity_narrative",
+      "content": "How participant positions themselves",
+      "citations": {{...}}
+    }}]
+  }}
+}}
+
+Remember:
+- Every major claim needs at least one primary_evidence citation
+- Look for patterns across multiple turns
+- Note when turns contradict each other
+- Include emotional peaks as supporting evidence
+"""
+    
+    async def _annotate_interview_level(self, interview_text: str, turn_annotations: List[Dict]) -> Dict:
+        """Generate interview-level insights with citations."""
+        
+        # Prepare turns with IDs for citation
+        turns_with_ids = []
+        for i, turn_anno in enumerate(turn_annotations):
+            turn_anno['turn_id'] = i + 1  # 1-indexed for clarity
+            turns_with_ids.append(turn_anno)
+        
+        # Create citation tracker
+        from src.pipeline.annotation.citation_tracker import CitationTracker
+        citation_tracker = CitationTracker(turns_with_ids)
+        
+        # Generate prompt with citation requirements
+        prompt = self.create_interview_citation_prompt(interview_text, turns_with_ids)
+        
+        # Get annotation with citations
+        response = await self._make_api_call(prompt, "interview_citation_analysis")
+        annotation = json.loads(response.choices[0].message.content)
+        
+        # Extract and validate citations
+        validated_annotation = self._process_citations(annotation, citation_tracker)
+        
+        return validated_annotation, response
+    
+    def _process_citations(self, annotation: Dict, tracker: CitationTracker) -> Dict:
+        """Process and validate citations in annotation."""
+        
+        citation_aware = annotation.get('citation_aware_insights', {})
+        
+        # Process each insight type
+        for insight_type in ['national_priorities', 'local_priorities', 'key_narratives']:
+            if insight_type not in citation_aware:
+                continue
+                
+            insights = citation_aware[insight_type]
+            if isinstance(insights, list):
+                for i, insight in enumerate(insights):
+                    if 'citations' in insight:
+                        citation_data = insight['citations']
+                        citation = tracker.create_citation(
+                            insight=insight,
+                            cited_turn_ids=citation_data.get('turn_ids', []),
+                            citation_details=citation_data.get('citation_details', [])
+                        )
+                        
+                        # Replace with structured citation
+                        insights[i]['structured_citations'] = citation.to_dict()
+        
+        # Validate all citations
+        all_citations = []
+        for insight_type in ['national_priorities', 'local_priorities', 'key_narratives']:
+            insights = citation_aware.get(insight_type, [])
+            for insight in insights:
+                if 'structured_citations' in insight:
+                    all_citations.append(InsightCitation(**insight['structured_citations']))
+        
+        issues = tracker.validate_citations(all_citations)
+        if issues:
+            annotation['citation_validation_issues'] = issues
+        
+        return annotation
     
     async def annotate_interview(self, interview: InterviewDocument) -> Tuple[Dict[str, Any], Dict[str, Any]]:
         """
@@ -459,6 +655,40 @@ Focus on faithful representation while achieving systematic analysis.
             logger.warning(f"Missing turn analyses for turns: {missing_turns}")
             # Could trigger additional API call here if needed
         
+        # PASS 4: Citation-aware interview insights
+        logger.info("Pass 4: Generating citation-aware interview insights")
+        
+        # Merge turn analyses with original turn data
+        merged_turns = []
+        for turn_anno in all_turn_analyses:
+            turn_id = turn_anno["turn_id"]
+            # Find original turn data
+            original_turn = next((t for t in turn_inventory if t["turn_id"] == turn_id), None)
+            if original_turn:
+                merged_turn = {
+                    **original_turn,
+                    **turn_anno,
+                    "citation_metadata": turn_anno.get("citation_metadata", {})
+                }
+                merged_turns.append(merged_turn)
+        
+        # Generate citation-aware insights
+        citation_annotation, citation_response = await self._annotate_interview_level(
+            interview.text, 
+            merged_turns
+        )
+        
+        cost_citation = self._estimate_cost(
+            citation_response.usage.prompt_tokens,
+            citation_response.usage.completion_tokens
+        )
+        total_cost += cost_citation
+        api_calls.append({
+            "pass": "citation_aware_insights",
+            "cost": cost_citation,
+            "tokens": citation_response.usage.prompt_tokens + citation_response.usage.completion_tokens
+        })
+        
         # Create final integrated annotation
         final_annotation = {
             **interview_data["interview_analysis"],
@@ -474,12 +704,18 @@ Focus on faithful representation while achieving systematic analysis.
                     "missing_turns": list(missing_turns) if missing_turns else []
                 }
             },
+            "citation_aware_insights": citation_annotation.get("citation_aware_insights", {}),
+            "citation_validation": {
+                "issues": citation_annotation.get("citation_validation_issues", []),
+                "validated": len(citation_annotation.get("citation_validation_issues", [])) == 0
+            },
             "quality_assessment": {
                 "annotation_completeness": 1.0 if not missing_turns else (len(analyzed_turn_ids) / len(expected_turn_ids)),
                 "turn_coverage": len(analyzed_turn_ids),
                 "expected_turns": len(expected_turn_ids),
-                "processing_approach": "multipass_comprehensive",
-                "all_turns_analyzed": len(missing_turns) == 0
+                "processing_approach": "multipass_comprehensive_with_citations",
+                "all_turns_analyzed": len(missing_turns) == 0,
+                "citations_included": True
             }
         }
         
