@@ -1,0 +1,17 @@
+# Research Pipeline Configuration
+
+# Models for different tasks
+models:
+  enrichment:
+    provider: "gemini"         # kimi, openai, gemini
+    model: "gemini-1.5-flash"
+  
+  research:
+    provider: "kimi"
+    model: "kimi-k2-0711-preview"
+
+# Processing settings
+processing:
+  batch_size: 5              # Interviews to process in parallel
+  max_iterations: 15         # Agent iterations
+  temperature: 0.7
