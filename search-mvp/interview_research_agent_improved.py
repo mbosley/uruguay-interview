@@ -11,9 +11,33 @@ from openai import OpenAI
 from dotenv import load_dotenv
 from interview_research_tools import INTERVIEW_RESEARCH_TOOLS
 import re
+import time
 
 # Load environment variables
 load_dotenv()
+
+# Import provider configuration
+try:
+    from config.providers import get_provider_config, PROVIDERS
+except ImportError:
+    # Fallback if providers.py doesn't exist yet
+    from dataclasses import dataclass
+    @dataclass
+    class ProviderConfig:
+        name: str
+        base_url: str
+        api_key_env: str
+        model_name: str
+        description: str
+    
+    def get_provider_config(provider_name=None):
+        return ProviderConfig(
+            name="moonshot",
+            base_url="https://api.moonshot.ai/v1",
+            api_key_env="MOONSHOT_API_KEY",
+            model_name="kimi-k2-0711-preview",
+            description="Moonshot AI hosting"
+        )
 
 class ColoredFormatter(logging.Formatter):
     """Custom formatter to add colors and clean formatting"""
@@ -49,10 +73,11 @@ class AgentLogger:
         # Remove existing handlers
         self.logger.handlers.clear()
         
-        # Console handler with custom formatting
-        console_handler = logging.StreamHandler()
-        console_handler.setFormatter(ColoredFormatter())
-        self.logger.addHandler(console_handler)
+        # Console handler with custom formatting - only add if verbose
+        if verbose:
+            console_handler = logging.StreamHandler()
+            console_handler.setFormatter(ColoredFormatter())
+            self.logger.addHandler(console_handler)
         
         # File handler for detailed logs
         file_handler = logging.FileHandler('logs/agent_session.log')
@@ -165,47 +190,114 @@ class AgentLogger:
             return f"{size/1024:.0f}K chars"
 
 class InterviewResearchAgent:
-    def __init__(self, api_key=None, model="kimi-k2-0711-preview", verbose=False, research_mode=False):
+    def __init__(self, api_key=None, model=None, verbose=False, research_mode=False, 
+                 depth=0, max_depth=3, parent_session_id=None, is_sub_agent=False, provider=None,
+                 event_callback=None):
+        
+        # Get provider configuration
+        self.provider_config = get_provider_config(provider)
+        self.event_callback = event_callback
+        
+        # Set up API client
+        api_key = api_key or os.getenv(self.provider_config.api_key_env)
+        if not api_key:
+            raise ValueError(f"{self.provider_config.api_key_env} not found. "
+                           f"Please set: export {self.provider_config.api_key_env}='your-key-here'")
+        
         self.client = OpenAI(
-            api_key=api_key or os.getenv("MOONSHOT_API_KEY"),
-            base_url="https://api.moonshot.ai/v1"
+            api_key=api_key,
+            base_url=self.provider_config.base_url
         )
-        self.model = model
+        
+        # Use provider's model name unless explicitly overridden
+        self.model = model or self.provider_config.model_name
+        
+        # Log provider info for root agents
+        if verbose and not is_sub_agent:
+            speed_info = f" ({self.provider_config.tokens_per_second} tok/s)" if hasattr(self.provider_config, 'tokens_per_second') and self.provider_config.tokens_per_second else ""
+            print(f"🚀 Using {self.provider_config.name}: {self.provider_config.description}{speed_info}")
         self.tools = INTERVIEW_RESEARCH_TOOLS
         self.session_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         self.logger = AgentLogger(verbose=verbose, research_mode=research_mode)
         self.research_mode = research_mode  # Show even more detail for research sessions
+        
+        # Hierarchy tracking for recursive agents
+        self.depth = depth
+        self.max_depth = max_depth
+        self.parent_session_id = parent_session_id
+        self.is_sub_agent = is_sub_agent
         
         # Track some stats
         self.stats = {
             'tool_calls': 0,
             'tokens_used': 0,
             'iterations': 0,
-            'start_time': datetime.now()
+            'start_time': datetime.now(),
+            'depth': depth,
+            'sub_agents_spawned': 0,
+            'input_tokens': 0,
+            'output_tokens': 0,
+            'total_cost': 0.0
         }
+    
+    async def emit_event(self, event_type: str, data: dict, iteration: int = None):
+        """Emit event to callback if available"""
+        if self.event_callback:
+            event = {
+                "type": event_type,
+                "data": data,
+                "timestamp": datetime.now().isoformat()
+            }
+            if iteration is not None:
+                event["iteration"] = iteration
+            await self.event_callback(event)
+    
+    def _extract_sources(self, text: str) -> list:
+        """Extract interview references from text"""
+        import re
+        # Look for patterns like "Interview 023" or "interview 071"
+        pattern = r'[Ii]nterview\s+(\d{3})'
+        matches = re.findall(pattern, text)
+        # Return unique sorted list
+        return sorted(list(set([f"Interview {id}" for id in matches])))[:10]
     
     async def autonomous_research(self, research_question, max_iterations=15):
         """Main research method with improved logging"""
         
-        self.logger.progress(f"Starting research: {research_question}")
+        if not self.is_sub_agent:
+            self.logger.progress(f"Starting research: {research_question}")
         
         # Initialize conversation (exactly like kimi_chat)
+        # Add context about agent hierarchy if this is a sub-agent
+        hierarchy_context = ""
+        if self.depth > 0:
+            hierarchy_context = f"\nYou are a specialized sub-agent at depth level {self.depth} (max depth: {self.max_depth}). "
+            if self.depth >= self.max_depth:
+                hierarchy_context += "You CANNOT spawn further sub-agents as you are at maximum depth. Focus on direct investigation."
+            else:
+                hierarchy_context += f"You can spawn sub-agents if needed (remaining depth: {self.max_depth - self.depth})."
+        
         final_messages = [{
             "role": "user",
-            "content": f"""You are an expert qualitative researcher with access to a corpus of citizen consultation interviews from Uruguay (May 28-29, 2025). These interviews explore citizen perspectives on national and local priorities.
+            "content": f"""You are an expert qualitative researcher with access to a corpus of citizen consultation interviews from Uruguay (May 28-29, 2025). These interviews explore citizen perspectives on national and local priorities.{hierarchy_context}
 
 Research Question: {research_question}
 
-Your task is to explore this question thoroughly using the available tools. Follow this research cycle:
+Your task is to explore this question thoroughly using the available tools. 
 
-📊 PHASE 1: ORIENTATION (Always start here)
+IMPORTANT: 
+- If the research question contains specific instructions about which tools to use (e.g., "use spawn_sub_agent", "just run get_corpus_stats"), follow those instructions directly without going through all phases.
+- For testing scenarios or when explicitly asked to demonstrate a tool, skip the full research cycle.
+- Otherwise, use this recommended research cycle for thorough research:
+
+📊 PHASE 1: ORIENTATION (Start here for general research)
 - Use `get_corpus_stats()` to understand the corpus size and scope
 - Use `list_interview_themes()` to see all themes - this reveals citizen concerns
 - Use `search_themes(keyword)` to explore themes related to your question
 - Look for patterns, unexpected themes, and research directions
 
 📝 PHASE 2: PLANNING (Use scratchpad to strategize)
-After orientation, ALWAYS write a research plan in your scratchpad:
+After orientation, write a research plan in your scratchpad:
 - What patterns did you notice in the themes?
 - Which interviews look most relevant? Why?
 - What search strategies will you use?
@@ -269,6 +361,29 @@ NEW MINI-PLAN:
 4. Look for connections to education (are healthcare training programs failing too?)
 
 This pivot might reveal systemic workforce issues across sectors.")
+
+🚀 DELEGATION STRATEGY (For Complex Research):
+When your research reveals multiple complex threads or the scope is too large for thorough exploration:
+
+WHEN TO DELEGATE:
+- You discover 3+ distinct sub-themes each needing deep investigation
+- A theme appears across many interviews requiring specialized analysis
+- You need parallel exploration of contrasting perspectives (urban vs rural)
+- Time/iteration limits prevent you from exploring all important aspects
+
+HOW TO DELEGATE EFFECTIVELY:
+1. First complete orientation phase to understand the landscape
+2. Identify specific, focused questions for sub-agents
+3. Provide context about what you've discovered and why delegation is needed
+4. Sub-agents will conduct independent research and return findings
+
+EXAMPLE DELEGATION PATTERN:
+After discovering education crisis has multiple dimensions:
+- spawn_sub_agent("Analyze teacher retention and burnout in rural schools", "Found 'professional_exhaustion' theme in interviews 068, 072, 089. Need deep dive into teacher perspectives and support systems.")
+- spawn_sub_agent("Investigate student dropout patterns and family economic pressures", "Multiple interviews mention students leaving for work. See interviews 071, 084, 091.")
+- spawn_sub_agent("Examine infrastructure and resource allocation in education", "Physical abandonment theme appears frequently. Focus on interviews mentioning building conditions, materials.")
+
+Sub-agents will return structured findings that you can synthesize into your final analysis.
 
 IMPORTANT: Use your scratchpad as a thinking space throughout the research:
 
@@ -388,6 +503,11 @@ TOOL SELECTION GUIDE:
 - `scratchpad_append("note")` → Record observations, plans, connections
 - `scratchpad_read()` → Review your research journey
 
+🚀 For DELEGATION (when scope is large):
+- `spawn_sub_agent("focused question", "context")` → Delegate deep exploration
+- Use when: Multiple themes need investigation, complex topic requires specialization
+- Example: After finding healthcare crisis across regions, delegate: "Analyze rural vs urban healthcare experiences"
+
 SEARCH TIPS:
 - Use Spanish terms when searching (e.g., "salud" not "health")
 - Try variations: "educación", "escuela", "maestro", "docente"
@@ -405,6 +525,12 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
             try:
                 self.logger.iteration_header(iteration + 1, max_iterations)
                 
+                # Emit iteration start event
+                await self.emit_event("iteration_start", {
+                    "current": iteration + 1,
+                    "max": max_iterations
+                }, iteration + 1)
+                
                 # Make API call with tools
                 api_params = {
                     "model": self.model,
@@ -414,14 +540,40 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                     "tools": [tool["schema"] for tool in self.tools.values()]
                 }
                 
+                # Debug: Log API call details
+                if self.research_mode and self.provider_config.name == "groq":
+                    self.logger.info(f"   🔍 API Call: iteration={iteration}, model={self.model}, provider={self.provider_config.name}")
+                    self.logger.info(f"   🔑 API Key: {self.client.api_key[:10]}...{self.client.api_key[-4:]}")
+                    self.logger.info(f"   📝 Messages: {len(final_messages)} messages, last role: {final_messages[-1]['role'] if final_messages else 'none'}")
+                
                 response = self.client.chat.completions.create(**api_params)
                 message = response.choices[0].message
+                
+                # Track token usage and costs
+                if hasattr(response, 'usage'):
+                    self.stats['input_tokens'] += response.usage.prompt_tokens
+                    self.stats['output_tokens'] += response.usage.completion_tokens
+                    
+                    # Calculate cost based on provider
+                    if self.provider_config.cost_per_1k_input and self.provider_config.cost_per_1k_output:
+                        input_cost = (response.usage.prompt_tokens / 1000) * self.provider_config.cost_per_1k_input
+                        output_cost = (response.usage.completion_tokens / 1000) * self.provider_config.cost_per_1k_output
+                        iteration_cost = input_cost + output_cost
+                        self.stats['total_cost'] += iteration_cost
+                        
+                        # Log cost in research mode
+                        if self.research_mode and not self.is_sub_agent:
+                            self.logger.info(f"   💰 Iteration cost: ${iteration_cost:.6f} ({response.usage.total_tokens} tokens)")
                 
                 # Check if agent wants to use tools
                 if hasattr(message, 'tool_calls') and message.tool_calls:
                     # Show agent's thinking if provided
                     if message.content:
                         self.logger.thinking(message.content)
+                        # Emit thinking event
+                        await self.emit_event("thinking", {
+                            "content": message.content
+                        }, iteration + 1)
                     
                     # Add assistant's message to conversation
                     final_messages.append({
@@ -439,8 +591,19 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                         ]
                     })
                     
-                    # Execute each tool call
+                    # Separate spawn_sub_agent calls from other tools
+                    spawn_calls = []
+                    other_calls = []
+                    
                     for tool_call in message.tool_calls:
+                        tool_name = tool_call.function.name
+                        if tool_name == "spawn_sub_agent":
+                            spawn_calls.append(tool_call)
+                        else:
+                            other_calls.append(tool_call)
+                    
+                    # Execute non-spawn tools sequentially first
+                    for tool_call in other_calls:
                         tool_name = tool_call.function.name
                         tool_args_str = tool_call.function.arguments
                         
@@ -452,6 +615,13 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                         
                         self.logger.tool_call(tool_name, tool_args)
                         
+                        # Emit tool_call event
+                        await self.emit_event("tool_call", {
+                            "tool": tool_name,
+                            "args": tool_args,
+                            "id": tool_call.id
+                        }, iteration + 1)
+                        
                         # Execute tool
                         if tool_name in [schema["schema"]["function"]["name"] for schema in self.tools.values()]:
                             # Find the right tool
@@ -462,7 +632,7 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                                     break
                             
                             if tool_config:
-                                result = self.execute_cli_tool(tool_name, tool_config["command"], tool_args)
+                                result = await self.execute_cli_tool(tool_name, tool_config["command"], tool_args)
                                 
                                 # Special handling for scratchpad
                                 if tool_name == "scratchpad_append" and "note" in tool_args:
@@ -525,6 +695,15 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                         
                         self.logger.tool_result(len(result), preview)
                         
+                        # Emit tool_result event
+                        await self.emit_event("tool_result", {
+                            "tool": tool_name,
+                            "metadata": {
+                                "size": len(result),
+                                "preview": preview or result[:200] + "..." if len(result) > 200 else result
+                            }
+                        }, iteration + 1)
+                        
                         # Add tool result to conversation
                         final_messages.append({
                             "role": "tool",
@@ -536,14 +715,163 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                         tool_call_log.append({
                             "tool": tool_name,
                             "args": tool_args,
+                            "result": result,  # Include the actual result
                             "result_length": len(result),
                             "timestamp": datetime.now().isoformat()
                         })
                         
                         self.stats['tool_calls'] += 1
                     
+                    # Execute spawn_sub_agent calls in parallel
+                    if spawn_calls:
+                        self.logger.info(f"🚀 Executing {len(spawn_calls)} sub-agents in parallel...")
+                        # Show what each sub-agent will research
+                        for i, tool_call in enumerate(spawn_calls, 1):
+                            try:
+                                args = json.loads(tool_call.function.arguments)
+                                question = args.get('question', 'Unknown')
+                                self.logger.info(f"   {i}. {question[:100]}...")
+                            except:
+                                pass
+                        
+                        start_time = time.time()
+                        
+                        # Prepare tasks for parallel async execution
+                        spawn_tasks = []
+                        task_metadata = []
+                        
+                        for tool_call in spawn_calls:
+                            tool_name = tool_call.function.name
+                            tool_args_str = tool_call.function.arguments
+                            
+                            # Parse arguments
+                            try:
+                                tool_args = json.loads(tool_args_str) if tool_args_str else {}
+                            except json.JSONDecodeError:
+                                tool_args = {}
+                            
+                            # Find tool config
+                            tool_config = None
+                            for tool_key, tool_def in self.tools.items():
+                                if tool_def["schema"]["function"]["name"] == tool_name:
+                                    tool_config = tool_def
+                                    break
+                            
+                            if tool_config:
+                                self.logger.tool_call(tool_name, tool_args)
+                                
+                                # Emit tool_call event
+                                await self.emit_event("tool_call", {
+                                    "tool": tool_name,
+                                    "args": tool_args,
+                                    "id": tool_call.id
+                                }, iteration + 1)
+                                
+                                # Create async task
+                                task = self.execute_cli_tool(
+                                    tool_name,
+                                    tool_config["command"],
+                                    tool_args
+                                )
+                                spawn_tasks.append(task)
+                                task_metadata.append((tool_call, tool_args))
+                        
+                        # Execute all spawn tasks in parallel
+                        results = await asyncio.gather(*spawn_tasks, return_exceptions=True)
+                        
+                        # Process results
+                        for i, result in enumerate(results):
+                            tool_call, tool_args = task_metadata[i]
+                            
+                            if isinstance(result, Exception):
+                                error_result = json.dumps({"error": str(result)})
+                                self.logger.error(f"Sub-agent failed: {str(result)}")
+                                
+                                final_messages.append({
+                                    "role": "tool",
+                                    "tool_call_id": tool_call.id,
+                                    "content": error_result
+                                })
+                                
+                                tool_call_log.append({
+                                    "tool": "spawn_sub_agent",
+                                    "args": tool_args,
+                                    "result": error_result,
+                                    "result_length": len(error_result),
+                                    "timestamp": datetime.now().isoformat()
+                                })
+                                
+                                self.stats['tool_calls'] += 1
+                            else:
+                                # Parse sub-agent result for better logging
+                                try:
+                                    parsed_result = json.loads(result)
+                                    if isinstance(parsed_result, dict):
+                                        # Extract key information from sub-agent response
+                                        summary = parsed_result.get('final_response', '')[:200] + '...'
+                                        tool_calls = parsed_result.get('tool_calls_count', 0)
+                                        iterations = parsed_result.get('iterations', 0)
+                                        action_summary = parsed_result.get('action_summary', 'conducted research')
+                                        
+                                        preview = f"✓ {iterations} iterations, {tool_calls} tool calls"
+                                        self.logger.info(f"   🔍 Sub-agent {action_summary}")
+                                        self.logger.info(f"   📊 Key finding: {summary[:150]}...")
+                                        
+                                        # Show tool usage breakdown if available
+                                        if 'tool_summary' in parsed_result:
+                                            tools_used = ', '.join([f"{t}({c})" for t, c in parsed_result['tool_summary'].items()])
+                                            self.logger.info(f"   🔧 Tools used: {tools_used}")
+                                        
+                                        # Aggregate sub-agent costs
+                                        if 'stats' in parsed_result and 'total_cost' in parsed_result['stats']:
+                                            sub_cost = parsed_result['stats']['total_cost']
+                                            self.stats['total_cost'] += sub_cost
+                                            if sub_cost > 0:
+                                                self.logger.info(f"   💰 Sub-agent cost: ${sub_cost:.6f}")
+                                    else:
+                                        preview = "Sub-agent completed"
+                                except json.JSONDecodeError:
+                                    preview = "Sub-agent completed (non-JSON response)"
+                                
+                                self.logger.tool_result(len(result), preview)
+                                
+                                # Emit tool_result event
+                                await self.emit_event("tool_result", {
+                                    "tool": "spawn_sub_agent",
+                                    "metadata": {
+                                        "size": len(result),
+                                        "preview": preview
+                                    }
+                                }, iteration + 1)
+                                
+                                # Add tool result to conversation
+                                final_messages.append({
+                                    "role": "tool",
+                                    "tool_call_id": tool_call.id,
+                                    "content": result
+                                })
+                                
+                                # Log tool call
+                                tool_call_log.append({
+                                    "tool": "spawn_sub_agent",
+                                    "args": tool_args,
+                                    "result": result,
+                                    "result_length": len(result),
+                                    "timestamp": datetime.now().isoformat()
+                                })
+                                
+                                self.stats['tool_calls'] += 1
+                        
+                        elapsed = time.time() - start_time
+                        self.logger.info(f"✅ All sub-agents completed in {elapsed:.1f}s (parallel execution)")
+                    
                     iteration += 1
                     self.stats['iterations'] = iteration
+                    
+                    # Add small delay for Groq to avoid rate limiting
+                    if self.provider_config.name == "groq" and iteration < max_iterations:
+                        await asyncio.sleep(0.5)
+                    
                     continue
                     
                 else:
@@ -651,21 +979,68 @@ CITATION REQUIREMENTS:
                     max_tokens=4096
                 )
                 
+                # Track summary generation costs
+                if hasattr(summary_response, 'usage'):
+                    self.stats['input_tokens'] += summary_response.usage.prompt_tokens
+                    self.stats['output_tokens'] += summary_response.usage.completion_tokens
+                    
+                    if self.provider_config.cost_per_1k_input and self.provider_config.cost_per_1k_output:
+                        input_cost = (summary_response.usage.prompt_tokens / 1000) * self.provider_config.cost_per_1k_input
+                        output_cost = (summary_response.usage.completion_tokens / 1000) * self.provider_config.cost_per_1k_output
+                        summary_cost = input_cost + output_cost
+                        self.stats['total_cost'] += summary_cost
+                
                 final_response = summary_response.choices[0].message.content
                 
             except Exception as e:
                 self.logger.error(f"Error generating summary: {str(e)}")
                 final_response = f"Error generating summary: {str(e)}"
         
-        # Show final stats
-        duration = datetime.now() - self.stats['start_time']
-        self.logger.info(f"\n{'='*60}")
-        self.logger.info(f"📊 Research Statistics:")
-        self.logger.info(f"   • Duration: {duration.seconds}s")
-        self.logger.info(f"   • Iterations: {self.stats['iterations']}")
-        self.logger.info(f"   • Tool calls: {self.stats['tool_calls']}")
-        self.logger.info(f"   • Session ID: {self.session_id}")
-        self.logger.info(f"{'='*60}\n")
+        # Emit final response events
+        await self.emit_event("response_start", {})
+        await self.emit_event("response_end", {
+            "response": final_response,
+            "sources": self._extract_sources(final_response)
+        })
+        
+        # Emit stats
+        duration = (datetime.now() - self.stats['start_time']).total_seconds()
+        await self.emit_event("stats", {
+            "duration": duration,
+            "iterations": self.stats['iterations'], 
+            "toolCalls": self.stats['tool_calls'],
+            "llmCalls": iteration + 1,
+            "inputTokens": self.stats['input_tokens'],
+            "outputTokens": self.stats['output_tokens'],
+            "totalCost": self.stats['total_cost']
+        })
+        
+        # Show final stats (only for root agents)
+        if not self.is_sub_agent:
+            duration = datetime.now() - self.stats['start_time']
+            self.logger.info(f"\n{'='*60}")
+            self.logger.info(f"📊 Research Statistics:")
+            self.logger.info(f"   • Duration: {duration.seconds}s")
+            self.logger.info(f"   • Iterations: {self.stats['iterations']}")
+            self.logger.info(f"   • Tool calls: {self.stats['tool_calls']}")
+            
+            # Show token usage and costs
+            if self.stats['input_tokens'] > 0:
+                total_tokens = self.stats['input_tokens'] + self.stats['output_tokens']
+                self.logger.info(f"   • Tokens: {total_tokens:,} (in: {self.stats['input_tokens']:,}, out: {self.stats['output_tokens']:,})")
+                
+                # Show cost if applicable
+                if self.stats['total_cost'] > 0:
+                    self.logger.info(f"   • Cost: ${self.stats['total_cost']:.4f} ({self.provider_config.name})")
+                else:
+                    self.logger.info(f"   • Cost: Free ({self.provider_config.name})")
+            
+            # Show sub-agent spawns if any
+            if self.stats['sub_agents_spawned'] > 0:
+                self.logger.info(f"   • Sub-agents: {self.stats['sub_agents_spawned']}")
+                
+            self.logger.info(f"   • Session ID: {self.session_id}")
+            self.logger.info(f"{'='*60}\n")
         
         # Prepare stats for JSON serialization
         serializable_stats = self.stats.copy()
@@ -692,84 +1067,189 @@ CITATION REQUIREMENTS:
             "full_conversation": final_messages
         }
     
-    def execute_cli_tool(self, tool_name, command_template, arguments):
+    async def execute_cli_tool(self, tool_name, command_template, arguments):
         """Execute a CLI tool with the given arguments"""
         
-        # Replace placeholders in command
-        command = command_template
-        for key, value in arguments.items():
-            placeholder = f"{{{key}}}"
-            if placeholder in command:
-                # Handle different value types
-                if isinstance(value, str):
-                    # Properly escape for shell
-                    if tool_name in ["scratchpad_append", "scratchpad_read"] and key == "note":
-                        # For scratchpad, use base64 encoding
-                        import base64
-                        value_b64 = base64.b64encode(value.encode()).decode()
-                        command = command.replace(placeholder, value_b64)
-                    else:
-                        command = command.replace(placeholder, f'"{value}"')
-                else:
-                    command = command.replace(placeholder, str(value))
-        
-        # For scratchpad tools, use base64 to safely pass arguments
-        if tool_name in ["scratchpad_append", "scratchpad_read"]:
-            if "note" in arguments:
-                # Use base64 to safely encode the note content
-                import base64
-                note_b64 = base64.b64encode(arguments["note"].encode()).decode()
-                session_id = arguments.get("session_id", self.session_id)  # Use agent's session_id as default
-                full_command = f'python -c "import base64; from src.tools.scratchpad_tools import append_note; print(append_note(base64.b64decode(\'{note_b64}\').decode(), \'{session_id}\'))"'
-            else:
-                # For scratchpad_read, always use agent's session_id
-                session_id = arguments.get("session_id", self.session_id)
-                full_command = f'python -c "from src.tools.scratchpad_tools import read_notes; print(read_notes(\'{session_id}\'))"'
-        else:
+        # Special handling for spawn_sub_agent first
+        if tool_name == "spawn_sub_agent":
+            # Check depth limit
+            if self.depth >= self.max_depth:
+                return json.dumps({"error": f"Cannot spawn sub-agent: already at maximum depth ({self.max_depth})"})
+            
+            # Get parameters
+            question = arguments.get("question", "")
+            context = arguments.get("context", "")
+            max_iterations = arguments.get("max_iterations", 10)
+            
+            # Build command directly
+            command = command_template
+            command = command.replace("{depth}", str(self.depth + 1))
+            command = command.replace("{parent_id}", self.session_id)
+            command = command.replace("{max_depth}", str(self.max_depth))
+            command = command.replace("{question}", question)
+            
+            # Add provider flag to pass down to sub-agent
+            command += f" --provider={self.provider_config.name}"
+            
+            self.stats['sub_agents_spawned'] += 1
+            self.logger.info(f"🚀 Delegating to sub-agent (depth {self.depth + 1}):")
+            self.logger.info(f"   📝 Question: {question[:150]}...")
+            self.logger.info(f"   🎯 Context: {context[:100]}..." if context else "   🎯 No context provided")
+            self.logger.info(f"   ⚙️  Max iterations: {max_iterations}")
+            
             full_command = command
+            
+        else:
+            # Normal placeholder replacement for other tools
+            command = command_template
+            for key, value in arguments.items():
+                placeholder = f"{{{key}}}"
+                if placeholder in command:
+                    # Handle different value types
+                    if isinstance(value, str):
+                        # Properly escape for shell
+                        if tool_name in ["scratchpad_append", "scratchpad_read"] and key == "note":
+                            # For scratchpad, use base64 encoding
+                            import base64
+                            value_b64 = base64.b64encode(value.encode()).decode()
+                            command = command.replace(placeholder, value_b64)
+                        else:
+                            command = command.replace(placeholder, f'"{value}"')
+                    else:
+                        command = command.replace(placeholder, str(value))
+        
+            # For scratchpad tools, use base64 to safely pass arguments  
+            if tool_name in ["scratchpad_append", "scratchpad_read"]:
+                if "note" in arguments:
+                    # Use base64 to safely encode the note content
+                    import base64
+                    note_b64 = base64.b64encode(arguments["note"].encode()).decode()
+                    session_id = arguments.get("session_id", self.session_id)  # Use agent's session_id as default
+                    full_command = f'python -c "import base64; from src.tools.scratchpad_tools import append_note; print(append_note(base64.b64decode(\'{note_b64}\').decode(), \'{session_id}\'))"'
+                else:
+                    # For scratchpad_read, always use agent's session_id
+                    session_id = arguments.get("session_id", self.session_id)
+                    full_command = f'python -c "from src.tools.scratchpad_tools import read_notes; print(read_notes(\'{session_id}\'))"'
+            else:
+                full_command = command
         
         # Execute command
         try:
-            result = subprocess.run(
+            # Use longer timeout for sub-agents
+            # With Groq's speed, even complex research should complete in 2-3 minutes
+            timeout = 180 if tool_name == "spawn_sub_agent" else 30
+            
+            # Use asyncio subprocess to avoid blocking the event loop
+            process = await asyncio.create_subprocess_shell(
                 full_command,
-                shell=True,
-                capture_output=True,
-                text=True,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
                 cwd=os.path.dirname(os.path.abspath(__file__))
             )
             
-            if result.returncode != 0:
-                error_output = result.stderr.strip() if result.stderr else "No error output"
-                return f"Command failed with error: {error_output}"
+            try:
+                stdout, stderr = await asyncio.wait_for(
+                    process.communicate(),
+                    timeout=timeout
+                )
+                
+                if process.returncode != 0:
+                    error_output = stderr.decode().strip() if stderr else "No error output"
+                    return f"Command failed with error: {error_output}"
+                
+                return stdout.decode().strip() if stdout else "Command completed with no output"
             
-            return result.stdout.strip() if result.stdout else "Command completed with no output"
+            except asyncio.TimeoutError:
+                process.kill()
+                await process.wait()
+                raise subprocess.TimeoutExpired(full_command, timeout)
             
+        except subprocess.TimeoutExpired:
+            return json.dumps({
+                "error": f"Sub-agent timed out after {timeout} seconds",
+                "partial_output": "Sub-agent may still be running. Consider reducing max_iterations or simplifying the research question."
+            })
         except Exception as e:
             return f"Failed to execute command: {str(e)}"
 
 async def main():
     """Main entry point for the research agent"""
     
-    # Check for API key
-    api_key = os.getenv("MOONSHOT_API_KEY")
-    if not api_key:
-        print("❌ Error: MOONSHOT_API_KEY not found in environment variables")
-        print("Please set your Moonshot API key:")
-        print("  export MOONSHOT_API_KEY='your-key-here'")
+    # Check for sub-agent mode early
+    is_sub_agent = "--sub-agent" in sys.argv
+    
+    # Parse provider from command line or environment
+    provider = None
+    for arg in sys.argv:
+        if arg.startswith("--provider="):
+            provider = arg.split("=")[1]
+            sys.argv.remove(arg)
+            break
+    
+    # Get provider config (will auto-detect if not specified)
+    try:
+        provider_config = get_provider_config(provider)
+        api_key = os.getenv(provider_config.api_key_env)
+        
+        if not api_key:
+            print(f"❌ Error: {provider_config.api_key_env} not found")
+            print(f"Please set: export {provider_config.api_key_env}='your-key-here'")
+            if provider_config.name == "groq":
+                print("  Get your key at: https://console.groq.com/")
+            elif provider_config.name == "moonshot":
+                print("  Get your key at: https://platform.moonshot.cn/")
+            return
+    except Exception as e:
+        print(f"❌ Error configuring provider: {e}")
         return
     
-    # Print welcome message
-    print("🔬 Uruguay Interview Research Agent")
-    print("=" * 60)
-    print("Model: Kimi K2")
-    print("Corpus: 35 citizen consultation interviews")
-    print("=" * 60)
+    # Print welcome message (only for root agents)
+    if not is_sub_agent:
+        print("🔬 Uruguay Interview Research Agent")
+        print("=" * 60)
+        print(f"Provider: {provider_config.description}")
+        print(f"Model: {provider_config.model_name}")
+        if hasattr(provider_config, 'tokens_per_second') and provider_config.tokens_per_second:
+            print(f"Speed: {provider_config.tokens_per_second} tokens/sec")
+        print("Corpus: 35 citizen consultation interviews")
+        print("=" * 60)
     
     # Check for flags
     research_mode = "--research" in sys.argv
     if research_mode:
         sys.argv.remove("--research")
-        print("🔬 Research mode enabled: Extra detailed logging + complete scratchpad display")
+        if not is_sub_agent:
+            print("🔬 Research mode enabled: Extra detailed logging + complete scratchpad display")
+    depth = 0
+    max_depth = 3
+    parent_session_id = None
+    
+    if is_sub_agent:
+        sys.argv.remove("--sub-agent")
+        
+        # Parse depth
+        for i, arg in enumerate(sys.argv):
+            if arg == "--depth" and i + 1 < len(sys.argv):
+                depth = int(sys.argv[i + 1])
+                sys.argv.pop(i)
+                sys.argv.pop(i)
+                break
+        
+        # Parse parent
+        for i, arg in enumerate(sys.argv):
+            if arg == "--parent" and i + 1 < len(sys.argv):
+                parent_session_id = sys.argv[i + 1]
+                sys.argv.pop(i)
+                sys.argv.pop(i)
+                break
+        
+        # Parse max-depth
+        for i, arg in enumerate(sys.argv):
+            if arg == "--max-depth" and i + 1 < len(sys.argv):
+                max_depth = int(sys.argv[i + 1])
+                sys.argv.pop(i)
+                sys.argv.pop(i)
+                break
     
     # Get research question
     if len(sys.argv) > 1:
@@ -781,16 +1261,68 @@ async def main():
         print("❌ Error: Please provide a research question")
         return
     
-    print(f"\n🎯 Research Question: {research_question}")
-    print("=" * 60)
+    # Don't print headers for sub-agents
+    if not is_sub_agent:
+        print(f"\n🎯 Research Question: {research_question}")
+        print("=" * 60)
     
     # Create agent and run research
-    agent = InterviewResearchAgent(api_key=api_key, verbose=True, research_mode=research_mode)
+    agent = InterviewResearchAgent(
+        api_key=api_key, 
+        verbose=not is_sub_agent,  # Sub-agents run quietly
+        research_mode=research_mode,
+        depth=depth,
+        max_depth=max_depth,
+        parent_session_id=parent_session_id,
+        is_sub_agent=is_sub_agent,
+        provider=provider
+    )
     
     try:
-        results = await agent.autonomous_research(research_question, max_iterations=30)
+        # Run research with appropriate iteration limit
+        max_iter = 10 if is_sub_agent else 30
+        results = await agent.autonomous_research(research_question, max_iterations=max_iter)
         
-        # Save results
+        # Sub-agents output JSON to stdout and exit
+        if is_sub_agent:
+            # Extract key information for summary
+            tool_summary = {}
+            for tc in results["tool_calls"]:
+                tool_name = tc["tool"]
+                if tool_name not in tool_summary:
+                    tool_summary[tool_name] = 0
+                tool_summary[tool_name] += 1
+            
+            # Create a brief summary of what the sub-agent did
+            actions = []
+            if "get_corpus_stats" in tool_summary:
+                actions.append("analyzed corpus statistics")
+            if "search_interviews" in tool_summary:
+                actions.append(f"searched interviews {tool_summary['search_interviews']}x")
+            if "get_interview_turn" in tool_summary:
+                actions.append(f"examined {tool_summary['get_interview_turn']} interview segments")
+            if "search_themes" in tool_summary:
+                actions.append(f"explored themes {tool_summary['search_themes']}x")
+            
+            action_summary = ", ".join(actions) if actions else "conducted research"
+            
+            # Simplify results for parent agent
+            sub_agent_results = {
+                "final_response": results["final_response"],
+                "session_id": results["session_id"],
+                "parent_session_id": parent_session_id,
+                "depth": depth,
+                "iterations": results["iterations"],
+                "tool_calls_count": len(results["tool_calls"]),
+                "tool_summary": tool_summary,
+                "action_summary": action_summary,
+                "key_findings": results.get("scratchpad", ""),
+                "stats": results["stats"]
+            }
+            print(json.dumps(sub_agent_results, ensure_ascii=False))
+            return
+        
+        # Regular agents save results to files
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         output_file = f"results/research_results_{timestamp}.json"
         

@@ -1,40 +1,54 @@
 # Makefile for Uruguay Interview Research Pipeline
 # Usage: make help
-.PHONY: help clean setup data enrich agent run-agent
+.PHONY: help clean setup data enrich agent run-agent run-api run-ui run-demo run-all
 
 # Default target
 help:
-	@echo "Uruguay Interview Research Pipeline"
-	@echo "=================================="
+	@echo "Uruguay Interview Research System"
+	@echo "================================="
 	@echo ""
-	@echo "Setup targets:"
+	@echo "🚀 Quick Start (Web Interface):"
+	@echo "  run-api        Start the FastAPI backend server"
+	@echo "  run-ui         Start the React web interface"
+	@echo "  run-demo       Start the Streamlit demo app"
+	@echo "  run-all        Run API + React UI together"
+	@echo ""
+	@echo "📦 Setup targets:"
 	@echo "  setup          Install Python dependencies"
+	@echo "  setup-ui       Install React UI dependencies"
+	@echo "  setup-all      Install all dependencies"
 	@echo "  clean          Clean generated files and artifacts"
 	@echo ""
-	@echo "Data processing targets:"
+	@echo "🔬 Data processing targets:"
 	@echo "  data           Parse all raw interview files → JSON"
 	@echo "  enrich         Annotate interviews with themes/tags"
-	@echo "  pipeline       Run full data pipeline (parse + enrich)"
+	@echo "  consolidate    Consolidate themes into meta-themes"
+	@echo "  pipeline       Run full data pipeline (parse + enrich + consolidate)"
 	@echo ""
-	@echo "Research agent targets:"
+	@echo "🤖 Research agent targets:"
 	@echo "  agent          Test the autonomous research agent"
-	@echo "  run-agent      Interactive agent session"
+	@echo "  run-agent      Interactive agent session (CLI)"
+	@echo "  research       Agent with extended logging (2000 char excerpts)"
+	@echo "  recursive      Agent with delegation capabilities highlighted"
+	@echo "  test-recursive Test recursive sub-agent spawning"
 	@echo ""
-	@echo "Variables:"
+	@echo "📊 Variables:"
 	@echo "  QUESTION       Research question for agent (default: healthcare)"
 	@echo "  MAX_ITER       Max agent iterations (default: 15)"
-	@echo "  PROVIDER       LLM provider (kimi, openai, gemini)"
-	@echo "  MODEL          Specific model name"
+	@echo "  PROVIDER       LLM provider for agent (moonshot, groq)"
+	@echo "  MODEL          Specific model name (for enrichment)"
 	@echo ""
-	@echo "Examples:"
-	@echo "  make pipeline                    # Full data processing"
-	@echo "  make enrich PROVIDER=gemini MODEL=gemini-flash"
-	@echo "  make enrich PROVIDER=openai MODEL=gpt-4o"
+	@echo "💡 Examples:"
+	@echo "  make run-api                     # Start API server"
+	@echo "  make run-ui                      # Start React UI (in new terminal)"
+	@echo "  make run-demo                    # Start Streamlit demo"
 	@echo "  make agent QUESTION='rural education' MAX_ITER=20"
-	@echo "  make run-agent                   # Interactive session"
+	@echo "  make run-agent PROVIDER=groq     # Fast CLI research"
 
 # Variables
-PYTHON := python3
+VENV := venv
+PYTHON := $(VENV)/bin/python
+PIP := $(VENV)/bin/python -m pip
 PROJECT_ROOT := ..
 DATA_DIR := $(PROJECT_ROOT)/data
 RAW_DIR := $(DATA_DIR)/raw/interviews
@@ -52,10 +66,18 @@ MAX_ITER ?= 30
 PROVIDER ?= # Use config default
 MODEL ?= # Use config default
 
+# Virtual environment
+$(VENV):
+	@echo "🐍 Creating virtual environment..."
+	@python3 -m venv $(VENV) --upgrade-deps
+	@$(VENV)/bin/python -m ensurepip --upgrade
+	@echo "✅ Virtual environment created"
+
 # Setup and cleanup
-setup:
+setup: $(VENV)
 	@echo "🔧 Setting up Python environment..."
-	$(PYTHON) -m pip install -r requirements.txt
+	@$(PIP) install --upgrade pip
+	@$(PIP) install -r requirements.txt
 	@echo "✅ Setup complete"
 
 clean:
@@ -63,6 +85,16 @@ clean:
 	rm -f results/research_results_*.json
 	rm -f logs/agent_debug.log
 	@echo "✅ Clean complete"
+
+# Clean virtual environment
+clean-venv:
+	@echo "🗑️  Removing virtual environment..."
+	rm -rf $(VENV)
+	@echo "✅ Virtual environment removed"
+
+# Full clean including venv
+clean-all: clean clean-venv
+	@echo "✨ Full cleanup complete"
 
 clean-data:
 	@echo "🧹 Cleaning processed data files..."
@@ -93,7 +125,13 @@ $(ENRICHED_CORPUS): $(CORPUS_JSON)
 	$(PYTHON) scripts/merge_annotations.py --annotations-dir $(ENRICHED_DIR) --output-dir $(ENRICHED_DIR)
 	@echo "✅ Interview enrichment complete"
 
-pipeline: data enrich
+# Consolidate themes into meta-themes
+consolidate: $(ENRICHED_CORPUS)
+	@echo "🏷️  Consolidating themes into meta-themes..."
+	$(PYTHON) consolidate_themes.py $(if $(PROVIDER),--provider $(PROVIDER))
+	@echo "✅ Theme consolidation completed!"
+
+pipeline: data enrich consolidate
 	@echo "🚀 Full data pipeline complete!"
 	@echo "📊 Summary:"
 	@$(PYTHON) src/cli/enriched_cli.py stats
@@ -102,8 +140,15 @@ pipeline: data enrich
 agent: $(ENRICHED_CORPUS)
 	@echo "🤖 Running autonomous research agent..."
 	@echo "📋 Question: $(QUESTION)"
+	@if [ -n "$(PROVIDER)" ]; then \
+		echo "Provider: $(PROVIDER)"; \
+	fi
 	@mkdir -p results logs
-	$(PYTHON) interview_research_agent_improved.py "$(QUESTION)"
+	@if [ -n "$(PROVIDER)" ]; then \
+		$(PYTHON) interview_research_agent_improved.py --provider=$(PROVIDER) "$(QUESTION)"; \
+	else \
+		$(PYTHON) interview_research_agent_improved.py "$(QUESTION)"; \
+	fi
 
 # Research mode with extra detailed logging
 research: $(ENRICHED_CORPUS)
@@ -121,9 +166,26 @@ agent-original: $(ENRICHED_CORPUS)
 
 run-agent: $(ENRICHED_CORPUS)
 	@echo "🎯 Starting interactive research agent session..."
-	@echo "Enter your research question when prompted."
-	@mkdir -p results logs
-	$(PYTHON) interview_research_agent_improved.py
+	@if [ -n "$(PROVIDER)" ]; then \
+		echo "Provider: $(PROVIDER)"; \
+	fi
+	@if [ -n "$(QUESTION)" ]; then \
+		echo "📋 Question: $(QUESTION)"; \
+		mkdir -p results logs; \
+		if [ -n "$(PROVIDER)" ]; then \
+			$(PYTHON) interview_research_agent_improved.py --provider=$(PROVIDER) "$(QUESTION)"; \
+		else \
+			$(PYTHON) interview_research_agent_improved.py "$(QUESTION)"; \
+		fi \
+	else \
+		echo "Enter your research question when prompted."; \
+		mkdir -p results logs; \
+		if [ -n "$(PROVIDER)" ]; then \
+			$(PYTHON) interview_research_agent_improved.py --provider=$(PROVIDER); \
+		else \
+			$(PYTHON) interview_research_agent_improved.py; \
+		fi \
+	fi
 
 # Original agent (kept for compatibility)
 run-agent-original: $(ENRICHED_CORPUS)
@@ -132,6 +194,21 @@ run-agent-original: $(ENRICHED_CORPUS)
 	@mkdir -p results logs
 	@read -p "Research question: " question; \
 	$(PYTHON) interview_research_agent.py --question "$$question" --max-iterations $(MAX_ITER)
+
+# Recursive agent testing
+test-recursive: $(ENRICHED_CORPUS)
+	@echo "🚀 Testing recursive agent functionality..."
+	@echo "This will run a broad research question that should trigger delegation"
+	@mkdir -p results logs
+	$(PYTHON) test_recursive_agent.py
+
+# Run agent with delegation capabilities highlighted
+recursive: $(ENRICHED_CORPUS)
+	@echo "🚀 Running agent with recursive delegation (max depth: 2)..."
+	@echo "📋 Question: $(QUESTION)"
+	@echo "💡 Tip: Use a broad question to trigger sub-agent delegation"
+	@mkdir -p results logs
+	$(PYTHON) interview_research_agent_improved.py --research "$(QUESTION)"
 
 # Development and testing targets
 test-cli: $(ENRICHED_CORPUS)
@@ -204,3 +281,53 @@ show-logs:
 	else \
 		echo "❌ No debug logs found"; \
 	fi
+
+# Web Interface Targets
+# =====================
+
+# Start the FastAPI backend server
+run-api: $(VENV)
+	@echo "🚀 Starting API server on http://localhost:8000"
+	@echo "📚 API docs available at http://localhost:8000/docs"
+	@$(PYTHON) api_server.py
+
+# Start the React frontend
+run-ui:
+	@echo "🎨 Starting React UI on http://localhost:3000"
+	@echo "⚠️  Make sure API server is running (make run-api)"
+	@cd uruguay-research-ui && npm start
+
+# Start the Streamlit demo
+run-demo: $(VENV)
+	@echo "📊 Starting Streamlit demo on http://localhost:8501"
+	@cd web_demo && ../$(PYTHON) -m streamlit run app.py
+
+# Run both API and UI together (requires two terminals)
+run-all:
+	@echo "🚀 Starting full stack application..."
+	@echo "API: http://localhost:8000"
+	@echo "UI:  http://localhost:3000"
+	@echo ""
+	@echo "Press Ctrl+C to stop both services"
+	@trap 'kill 0' INT; \
+	$(PYTHON) api_server.py & \
+	cd uruguay-research-ui && npm start & \
+	wait
+
+# Setup UI dependencies
+setup-ui:
+	@echo "📦 Installing React UI dependencies..."
+	@cd uruguay-research-ui && npm install
+
+# Setup all dependencies
+setup-all: setup setup-ui
+	@echo "✅ All dependencies installed!"
+
+# Start unified logger
+run-logger: $(VENV)
+	@echo "📝 Starting unified logger on http://localhost:8001"
+	@$(PYTHON) unified_logger.py
+
+# View unified logs
+view-logs: $(VENV)
+	@$(PYTHON) view_unified_logs.py

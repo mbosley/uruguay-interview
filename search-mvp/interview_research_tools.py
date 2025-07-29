@@ -1,4 +1,9 @@
 # interview_research_tools.py
+"""
+Interview Research Tools
+Includes both original tools and hierarchical theme exploration tools
+"""
+
 INTERVIEW_RESEARCH_TOOLS = {
     "search_interviews": {
         "command": "python src/cli/enriched_cli.py search {query}",
@@ -130,6 +135,37 @@ INTERVIEW_RESEARCH_TOOLS = {
                         }
                     },
                     "required": ["keyword"]
+                }
+            }
+        }
+    },
+    
+    "spawn_sub_agent": {
+        "command": "python interview_research_agent_improved.py --sub-agent --depth {depth} --parent {parent_id} --max-depth {max_depth} \"{question}\"",
+        "schema": {
+            "type": "function",
+            "function": {
+                "name": "spawn_sub_agent",
+                "description": "Delegate a specific research sub-question to a specialized agent. Use this when: 1) You identify a complex theme needing deep exploration, 2) Multiple parallel investigations would be efficient, 3) You need focused analysis on a specific aspect. The sub-agent conducts independent research and returns structured findings. Example: After finding education themes across many interviews, delegate 'Analyze teacher perspectives on rural education challenges' to explore deeply.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "question": {
+                            "type": "string",
+                            "description": "Specific, focused research question for the sub-agent. Should be narrower than your main question."
+                        },
+                        "context": {
+                            "type": "string",
+                            "description": "Brief context about what you've found so far and why this delegation is needed. Include relevant interview IDs or themes."
+                        },
+                        "max_iterations": {
+                            "type": "integer",
+                            "description": "Maximum iterations for the sub-agent (default: 10, max: 20)",
+                            "default": 10,
+                            "maximum": 20
+                        }
+                    },
+                    "required": ["question", "context"]
                 }
             }
         }

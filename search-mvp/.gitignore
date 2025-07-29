@@ -1,0 +1,59 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Logs
+*.log
+logs/
+unified_logs/
+
+# Results and data
+results/
+scratchpads/
+data/raw/
+data/processed/
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build
+build/
+dist/
+*.egg-info/
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# Testing
+.pytest_cache/
+coverage/
+.coverage
+htmlcov/
+
+# Temporary
+*.tmp
+*.temp
+*.bak
+
+# Test outputs
+websocket_events_*.jsonl
+test_output_*.txt

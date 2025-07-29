@@ -103,3 +103,10 @@ cleanup_repository.py
 
 # claudepm marker file (local only)
 .claudepm
+
+# Session files
+.kimi_sessions/
+.llm_sessions/
+
+# Worktrees
+worktrees/

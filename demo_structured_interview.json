@@ -1,0 +1,154 @@
+{
+  "interview_metadata": {
+    "interview_id": "058",
+    "date": "2025-05-28",
+    "location": "Young",
+    "department": "Río Negro",
+    "participant": {
+      "age_range": "50-64",
+      "gender": "female",
+      "occupation": "healthcare_worker"
+    }
+  },
+  "turns": [
+    {
+      "turn_id": 1,
+      "speaker": "interviewer",
+      "text": "¿Hace cuánto existe el centro?",
+      "semantic_tags": ["institutional_history", "background_question"],
+      "citation_metadata": {
+        "key_phrases": ["existe el centro"],
+        "contribution_potential": "contextual"
+      }
+    },
+    {
+      "turn_id": 2,
+      "speaker": "participant",
+      "text": "Nosotros trabajamos desde el 97, desde que se inició la escuela 200. Hace 25 que las estamos esperando.",
+      "semantic_tags": [
+        "institutional_history",
+        "frustration_statement",
+        "temporal_reference",
+        "waiting_narrative"
+      ],
+      "citation_metadata": {
+        "key_phrases": ["Hace 25 que las estamos esperando"],
+        "emotional_valence": "frustrated",
+        "contribution_potential": "primary_evidence"
+      }
+    },
+    {
+      "turn_id": 5,
+      "speaker": "participant",
+      "text": "El problema principal es la falta de continuidad. Cuando cambia el gobierno y todo lo que vos trabajaste dos o tres años, cambió el intendente, vuelve todo otra vez.",
+      "semantic_tags": [
+        "political_instability",
+        "policy_discontinuity",
+        "frustration_statement",
+        "government_criticism",
+        "local_governance"
+      ],
+      "citation_metadata": {
+        "key_phrases": [
+          "falta de continuidad",
+          "Cuando cambia el gobierno",
+          "vuelve todo otra vez"
+        ],
+        "emotional_valence": "frustrated",
+        "evidence_type": "personal_experience",
+        "contribution_potential": "primary_evidence"
+      }
+    },
+    {
+      "turn_id": 8,
+      "speaker": "participant",
+      "text": "La inserción laboral real es fundamental. No sirve de nada tener una ley si no hay seguimiento, si no hay apoyo real para mantener a las personas con discapacidad en sus trabajos.",
+      "semantic_tags": [
+        "employment_concern",
+        "disability_rights",
+        "policy_implementation_gap",
+        "social_inclusion",
+        "law_enforcement_issue"
+      ],
+      "citation_metadata": {
+        "key_phrases": [
+          "inserción laboral real",
+          "No sirve de nada tener una ley",
+          "si no hay seguimiento"
+        ],
+        "evidence_type": "professional_observation",
+        "solution_orientation": "specific",
+        "contribution_potential": "primary_evidence"
+      }
+    },
+    {
+      "turn_id": 12,
+      "speaker": "participant",
+      "text": "Necesitamos 700 mil pesos mensuales para abrir al centro. Las ventas que hacemos desde acá y el apoyo de donaciones es lo único que nos mantiene.",
+      "semantic_tags": [
+        "economic_worry",
+        "resource_scarcity",
+        "institutional_sustainability",
+        "community_support",
+        "financial_needs"
+      ],
+      "citation_metadata": {
+        "key_phrases": [
+          "700 mil pesos mensuales",
+          "donaciones es lo único que nos mantiene"
+        ],
+        "evidence_type": "statistical_claim",
+        "specificity": "high",
+        "contribution_potential": "primary_evidence"
+      }
+    }
+  ],
+  "interview_insights": [
+    {
+      "insight_id": "INS_058_01",
+      "insight_type": "policy_implementation_gap",
+      "content": "There is a significant gap between disability inclusion laws and their practical implementation, particularly in employment support",
+      "semantic_tags": [
+        "disability_rights",
+        "employment_concern",
+        "policy_implementation_gap"
+      ],
+      "supporting_turns": [8],
+      "citations": [
+        {
+          "turn_id": 8,
+          "contribution_type": "primary_evidence",
+          "relevance_score": 0.95,
+          "specific_quote": "No sirve de nada tener una ley si no hay seguimiento"
+        }
+      ],
+      "confidence": 0.9
+    },
+    {
+      "insight_id": "INS_058_02",
+      "insight_type": "institutional_instability",
+      "content": "Political changes at the departmental level create discontinuity in social programs, forcing institutions to restart efforts with each new administration",
+      "semantic_tags": [
+        "political_instability",
+        "policy_discontinuity",
+        "local_governance"
+      ],
+      "supporting_turns": [5, 2],
+      "citations": [
+        {
+          "turn_id": 5,
+          "contribution_type": "primary_evidence",
+          "relevance_score": 0.98,
+          "specific_quote": "Cuando cambia el gobierno... vuelve todo otra vez"
+        },
+        {
+          "turn_id": 2,
+          "contribution_type": "supporting",
+          "relevance_score": 0.7,
+          "specific_quote": "Hace 25 que las estamos esperando"
+        }
+      ],
+      "confidence": 0.95
+    }
+  ]
+}

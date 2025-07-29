@@ -15,7 +15,9 @@ class EnrichedUruguayCLI:
         project_root = Path(__file__).parent.parent.parent.parent
         self.enriched_dir = project_root / "data" / "processed" / "enriched"
         self.interview_files = {}
+        self.theme_consolidation = None
         self._scan_interviews()
+        self._load_theme_consolidation()
     
     def _scan_interviews(self):
         """Scan for available enriched interview files"""
@@ -27,6 +29,13 @@ class EnrichedUruguayCLI:
             # Extract interview ID from filename
             interview_id = json_file.stem.replace("_enriched", "")
             self.interview_files[interview_id] = json_file
+    
+    def _load_theme_consolidation(self):
+        """Load theme consolidation mapping if available"""
+        consolidation_path = self.enriched_dir / "theme_consolidation.json"
+        if consolidation_path.exists():
+            with open(consolidation_path, 'r', encoding='utf-8') as f:
+                self.theme_consolidation = json.load(f)
     
     def _load_interview(self, interview_id: str) -> Optional[Dict]:
         """Load a specific enriched interview on demand"""
@@ -163,12 +172,35 @@ class EnrichedUruguayCLI:
         
         # Build a useful summary for research
         annotation = interview.get("annotation", {})
+        summary_obj = annotation.get("summary", {})
+        
+        # Extract themes with hierarchy
+        themes = []
+        meta_themes = set()
+        issue_tags = annotation.get("issue_tags", [])
+        
+        key_themes = summary_obj.get("key_themes", [])
+        for theme_obj in key_themes:
+            if isinstance(theme_obj, dict):
+                theme_info = {
+                    "theme": theme_obj.get("theme", ""),
+                    "description": theme_obj.get("description", ""),
+                    "intensity": theme_obj.get("intensity", ""),
+                    "meta_theme": theme_obj.get("meta_theme", ""),
+                    "issue_tags": theme_obj.get("issue_tags", [])
+                }
+                themes.append(theme_info)
+                if theme_obj.get("meta_theme"):
+                    meta_themes.add(theme_obj.get("meta_theme"))
+        
         summary = {
             "type": "interview_summary",
             "interview_id": interview_id,
             "metadata": interview.get("metadata", {}),
-            "summary": annotation.get("summary", "No summary available"),
-            "key_themes": annotation.get("key_themes", []),
+            "summary": summary_obj.get("overview", "No summary available"),
+            "key_themes": themes,
+            "meta_themes": list(meta_themes),
+            "issue_tags": issue_tags,
             "priority_rankings": annotation.get("priorities", {}),
             "tags": annotation.get("tags", {}),
             "notable_quotes": [
@@ -181,9 +213,11 @@ class EnrichedUruguayCLI:
             ],
             "stats": {
                 "total_turns": len(interview["turns"]),
-                "speakers": list(interview["indexes"]["turns_by_speaker"].keys()),
-                "theme_count": len(interview["indexes"]["turns_by_theme"].keys()),
-                "notable_quotes": len(interview["annotation"]["notable_quotes"])
+                "speakers": list(interview.get("indexes", {}).get("turns_by_speaker", {}).keys()),
+                "theme_count": len(themes),
+                "meta_theme_count": len(meta_themes),
+                "issue_tag_count": len(issue_tags),
+                "notable_quotes": len(annotation.get("notable_quotes", []))
             },
             "tips": {
                 "explore_themes": f"To explore a specific theme, search for it or get specific turns",
@@ -237,16 +271,41 @@ class EnrichedUruguayCLI:
                         "relevance": "high" if query_lower == tag.lower() else "medium"
                     })
         
-        # Search in themes
-        for theme in interview["annotation"]["key_themes"]:
-            theme_name = theme.get("theme", "")
-            if query_lower in theme_name.lower() or query_lower in theme.get("description", "").lower():
+        # Search in themes (handle new structure)
+        annotation = interview.get("annotation", {})
+        summary = annotation.get("summary", {})
+        key_themes = summary.get("key_themes", [])
+        
+        for theme_obj in key_themes:
+            if isinstance(theme_obj, dict):
+                theme_name = theme_obj.get("theme", "")
+                theme_desc = theme_obj.get("description", "")
+                meta_theme = theme_obj.get("meta_theme", "")
+                
+                # Check if query matches theme name, description, or meta-theme
+                if (query_lower in theme_name.lower() or 
+                    query_lower in theme_desc.lower() or
+                    query_lower in meta_theme.lower()):
+                    
+                    results.append({
+                        "type": "theme_match",
+                        "interview_id": interview["interview_id"],
+                        "theme": theme_name,
+                        "meta_theme": meta_theme,
+                        "issue_tags": theme_obj.get("issue_tags", []),
+                        "description": theme_desc[:200] + "..." if len(theme_desc) > 200 else theme_desc,
+                        "turn_ids": theme_obj.get("elaboration_turns", [])
+                    })
+        
+        # Search in issue tags
+        interview_issue_tags = annotation.get("issue_tags", [])
+        for tag in interview_issue_tags:
+            if query_lower in tag.lower():
                 results.append({
-                    "type": "theme_match",
+                    "type": "issue_tag_match",
                     "interview_id": interview["interview_id"],
-                    "theme": theme_name,
-                    "description": theme.get("description", "")[:200] + "...",
-                    "turn_ids": theme.get("elaboration_turns", [])
+                    "issue_tag": tag,
+                    "themes": [t.get("theme") for t in key_themes if isinstance(t, dict) and tag in t.get("issue_tags", [])]
                 })
         
         # Search in turn text
@@ -268,7 +327,7 @@ class EnrichedUruguayCLI:
         return re.sub(f"({re.escape(query)})", r"**\1**", text, flags=re.IGNORECASE)
     
     def list_themes(self, interview_id: Optional[str] = None, verbose: bool = False, summary_only: bool = False, filter_keyword: Optional[str] = None) -> Dict:
-        """List all themes across interviews"""
+        """List all themes across interviews with hierarchical structure"""
         theme_summary = {}
         
         # Determine which interviews to analyze
@@ -282,27 +341,41 @@ class EnrichedUruguayCLI:
             if not interview:
                 continue
             
-            for theme_name, turn_ids in interview["indexes"]["turns_by_theme"].items():
-                if theme_name not in theme_summary:
-                    theme_summary[theme_name] = {
-                        "interviews": [],
-                        "total_turns": 0,
-                        "interview_count": 0
-                    }
-                
-                if verbose:
-                    # Include full turn IDs in verbose mode
-                    theme_summary[theme_name]["interviews"].append({
-                        "interview_id": iid,
-                        "turn_count": len(turn_ids),
-                        "turn_ids": turn_ids
-                    })
-                else:
-                    # Just track counts in concise mode
-                    theme_summary[theme_name]["interviews"].append(iid)
-                
-                theme_summary[theme_name]["total_turns"] += len(turn_ids)
-                theme_summary[theme_name]["interview_count"] = len(set(theme_summary[theme_name]["interviews"]))
+            # Get themes from new annotation structure
+            annotation = interview.get("annotation", {})
+            summary = annotation.get("summary", {})
+            key_themes = summary.get("key_themes", [])
+            
+            for theme_obj in key_themes:
+                if isinstance(theme_obj, dict):
+                    theme_name = theme_obj.get("theme", "")
+                    if not theme_name:
+                        continue
+                    
+                    if theme_name not in theme_summary:
+                        theme_summary[theme_name] = {
+                            "interviews": [],
+                            "total_occurrences": 0,
+                            "interview_count": 0,
+                            "meta_theme": theme_obj.get("meta_theme", ""),
+                            "issue_tags": theme_obj.get("issue_tags", [])
+                        }
+                    
+                    # Count primary evidence and elaboration turns
+                    turn_count = len(theme_obj.get("primary_evidence", [])) + len(theme_obj.get("elaboration_turns", []))
+                    
+                    if verbose:
+                        theme_summary[theme_name]["interviews"].append({
+                            "interview_id": iid,
+                            "turn_count": turn_count,
+                            "description": theme_obj.get("description", ""),
+                            "intensity": theme_obj.get("intensity", "")
+                        })
+                    else:
+                        theme_summary[theme_name]["interviews"].append(iid)
+                    
+                    theme_summary[theme_name]["total_occurrences"] += turn_count
+                    theme_summary[theme_name]["interview_count"] += 1
         
         # Filter by keyword if provided
         if filter_keyword:
@@ -313,23 +386,44 @@ class EnrichedUruguayCLI:
             }
             theme_summary = filtered_themes
         
-        # Sort themes by prevalence (total turns)
+        # Sort themes by prevalence (total occurrences)
         sorted_themes = dict(sorted(theme_summary.items(), 
-                                  key=lambda x: x[1]["total_turns"], 
+                                  key=lambda x: x[1]["total_occurrences"], 
                                   reverse=True))
         
         if summary_only:
-            # Ultra-concise: just theme names with turn counts
-            summary_dict = {
-                theme: f"{data['total_turns']} turns across {data['interview_count']} interviews"
-                for theme, data in sorted_themes.items()
-            }
-            return {
-                "type": "theme_summary",
-                "themes": summary_dict,
-                "total_themes": len(sorted_themes),
-                "mode": "summary"
-            }
+            # Group by meta-theme for hierarchical view
+            if self.theme_consolidation:
+                meta_themes = self.theme_consolidation.get("meta_themes", {})
+                hierarchy = {}
+                
+                for theme, data in sorted_themes.items():
+                    meta_theme = data.get("meta_theme", "uncategorized")
+                    if meta_theme not in hierarchy:
+                        hierarchy[meta_theme] = {
+                            "name": meta_themes.get(meta_theme, {}).get("name", meta_theme),
+                            "themes": {}
+                        }
+                    hierarchy[meta_theme]["themes"][theme] = f"{data['total_occurrences']} turns in {data['interview_count']} interviews"
+                
+                return {
+                    "type": "theme_hierarchy",
+                    "meta_themes": hierarchy,
+                    "total_themes": len(sorted_themes),
+                    "mode": "summary"
+                }
+            else:
+                # Fallback to flat list if no consolidation
+                summary_dict = {
+                    theme: f"{data['total_occurrences']} turns in {data['interview_count']} interviews"
+                    for theme, data in sorted_themes.items()
+                }
+                return {
+                    "type": "theme_summary",
+                    "themes": summary_dict,
+                    "total_themes": len(sorted_themes),
+                    "mode": "summary"
+                }
         
         return {
             "type": "theme_list",
@@ -367,6 +461,8 @@ class EnrichedUruguayCLI:
         total_interviews = 0
         total_turns = 0
         all_themes = set()
+        all_meta_themes = set()
+        all_issue_tags = set()
         all_speakers = set()
         total_quotes = 0
         
@@ -377,19 +473,43 @@ class EnrichedUruguayCLI:
             
             total_interviews += 1
             total_turns += len(interview["turns"])
-            all_themes.update(interview["indexes"]["turns_by_theme"].keys())
-            all_speakers.update(interview["indexes"]["turns_by_speaker"].keys())
-            total_quotes += len(interview["annotation"]["notable_quotes"])
+            
+            # Get themes from new structure
+            annotation = interview.get("annotation", {})
+            summary = annotation.get("summary", {})
+            key_themes = summary.get("key_themes", [])
+            
+            for theme_obj in key_themes:
+                if isinstance(theme_obj, dict):
+                    all_themes.add(theme_obj.get("theme", ""))
+                    if theme_obj.get("meta_theme"):
+                        all_meta_themes.add(theme_obj.get("meta_theme"))
+            
+            all_issue_tags.update(annotation.get("issue_tags", []))
+            all_speakers.update(interview.get("indexes", {}).get("turns_by_speaker", {}).keys())
+            total_quotes += len(annotation.get("notable_quotes", []))
         
-        return {
+        stats_result = {
             "type": "corpus_stats",
             "total_interviews": total_interviews,
             "total_turns": total_turns,
             "unique_themes": len(all_themes),
+            "unique_meta_themes": len(all_meta_themes),
+            "unique_issue_tags": len(all_issue_tags),
             "unique_speakers": len(all_speakers),
             "total_notable_quotes": total_quotes,
             "avg_turns_per_interview": round(total_turns / total_interviews, 1) if total_interviews > 0 else 0
         }
+        
+        # Add consolidation info if available
+        if self.theme_consolidation:
+            stats_result["theme_consolidation"] = {
+                "available": True,
+                "total_meta_themes": len(self.theme_consolidation.get("meta_themes", {})),
+                "total_issue_tags": len(self.theme_consolidation.get("metadata", {}).get("issue_tags", {}))
+            }
+        
+        return stats_result
 
 
 def main():

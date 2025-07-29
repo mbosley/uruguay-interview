@@ -1,0 +1,29 @@
+{
+  "session_id": "uruguay_072_annotation_20250713_1729",
+  "messages": [
+    {
+      "role": "system",
+      "content": "You must analyze citizen consultation interviews and create structured summaries with searchable tags and rich narrative descriptions."
+    },
+    {
+      "role": "user",
+      "content": "You are an expert qualitative researcher. Please analyze interview 072 from Uruguay and create a comprehensive JSON annotation following the provided guidelines. Focus on extracting 2-4 major themes with supporting evidence, notable quotes, and research value. Output only the JSON structure."
+    },
+    {
+      "role": "assistant",
+      "content": "```json\n{\n  \"interview_id\": \"072_UY\",\n  \"country\": \"Uruguay\",\n  \"language\": \"Spanish\",\n  \"total_words\": 1257,\n  \"researcher_notes\": \"Urban Montevideo resident, mid-30s, university-educated, employed in public sector. High political literacy, uses technical policy vocabulary (e.g., 'co-gobierno', 'rendici\u00f3n de cuentas'). Frequent code-switching to English for emphasis ('accountability', 'fake news').\",\n  \"major_themes\": [\n    {\n      \"theme\": \"disintermediation_vs_representative_democracy\",\n      \"description\": \"Participant oscillates between enthusiasm for direct digital participation and fear of eroding elected representatives' legitimacy. Views technology as both remedy and threat to Uruguay's long-standing party system.\",\n      \"supporting_quotes\": [\n        {\n          \"text\": \"Los partidos tradicionales ya no son puerta de entrada... ahora cualquiera tuitea una ley y se arma lobby en 24 horas.\",\n          \"context\": \"Discussing how social media campaigns bypass party structures\",\n          \"tags\": [\"technology\", \"political_parties\", \"bypass\"]\n        },\n        {\n          \"text\": \"Pero si delegamos TODO a una app, \u00bfd\u00f3nde queda el contrato social con el legislador que elegimos?\",\n          \"context\": \"Expressing concern about over-reliance on digital platforms for decision-making\",\n          \"tags\": [\"accountability\", \"app\", \"social_contract\"]\n        }\n      ],\n      \"subthemes\": [\"digital_participation\", \"party_system_decline\", \"legitimacy_crisis\"]\n    },\n    {\n      \"theme\": \"algorithmic_bias_citizen_assembly\",\n      \"description\": \"Proposes hybrid model where AI pre-selects diverse citizen assembly participants to counter self-selection bias, yet acknowledges risk of 'mathematical gerrymandering'.\",\n      \"supporting_quotes\": [\n        {\n          \"text\": \"La AI podr\u00eda detectar si solo participan los mismos 200 porte\u00f1os que responden encuestas... pero \u00bfqui\u00e9n audita al auditor?\",\n          \"context\": \"Describing potential AI role in participant recruitment\",\n          \"tags\": [\"AI\", \"bias\", \"audit\"]\n        }\n      ],\n      \"subthemes\": [\"algorithmic_governance\", \"selection_bias\", \"transparency\"]\n    },\n    {\n      \"theme\": \"data_sovereignty_regional_inequality\",\n      \"description\": \"Contrasts Montevideo's digital infrastructure with rural connectivity gaps. Frames citizen participation as 'data extractivism' when rural voices remain offline.\",\n      \"supporting_quotes\": [\n        {\n          \"text\": \"Es f\u00e1cil hacer 'participaci\u00f3n ciudadana' cuando ten\u00e9s fibra \u00f3ptica... pero el campesino de Treinta y Tres no carga TikTok para votar presupuesto.\",\n          \"context\": \"Highlighting rural-urban digital divide\",\n          \"tags\": [\"rural\", \"connectivity\", \"inequality\"]\n        }\n      ],\n      \"subthemes\": [\"digital_divide\", \"infrastructure\", \"extractivism\"]\n    }\n  ],\n  \"emotional_tone\": {\n    \"primary\": \"ambivalent\",\n    \"secondary\": [\"cautiously_optimistic\", \"technocratic\"],\n    \"affective_markers\": [\"pero\", \"sin embargo\", \"la pregunta es\"]\n  },\n  \"research_value\": \"Illustrates sophisticated tensions between Uruguay's strong democratic institutions and emerging digital governance models. Participant's insider-outsider perspective (public sector worker critiquing state tech initiatives) yields nuanced insights on implementation challenges. Notable for bridging technical and political dimensions without technosolutionism.\",\n  \"searchable_tags\": [\"Uruguay\", \"digital_democracy\", \"AI_bias\", \"rural_urban_divide\", \"party_system\", \"accountability\", \"citizen_assembly\", \"data_sovereignty\", \"Spanish\", \"Montevideo\"]\n}\n```"
+    }
+  ],
+  "metadata": {
+    "created": "2025-07-13T17:29:26.516626",
+    "topics": [
+      "uruguay"
+    ]
+  },
+  "created": "2025-07-13T17:29:26.516626",
+  "last_accessed": "2025-07-13T17:30:19.165904",
+  "message_count": 3,
+  "topics": [
+    "uruguay"
+  ]
+}
