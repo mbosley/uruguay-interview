@@ -1,0 +1,926 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uruguay Interview Research Demo</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --gray-100: #f3f4f6;
+            --gray-200: #e5e7eb;
+            --gray-300: #d1d5db;
+            --gray-400: #9ca3af;
+            --gray-500: #6b7280;
+            --gray-700: #374151;
+            --gray-900: #111827;
+            --green-500: #10b981;
+            --yellow-500: #f59e0b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            color: var(--gray-900);
+            line-height: 1.6;
+            background: var(--gray-100);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .subtitle {
+            color: var(--gray-500);
+            font-size: 1.1rem;
+        }
+
+        .chat-container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+            overflow: hidden;
+        }
+
+        .input-section {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--gray-200);
+        }
+
+        .input-wrapper {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 2px solid var(--gray-300);
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--primary-dark);
+        }
+
+        button:disabled {
+            background: var(--gray-300);
+            cursor: not-allowed;
+        }
+
+        .example-questions {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+
+        .example-btn {
+            padding: 0.25rem 0.75rem;
+            background: var(--gray-200);
+            color: var(--gray-700);
+            font-size: 0.875rem;
+        }
+
+        .example-btn:hover {
+            background: var(--gray-300);
+        }
+
+        .results-section {
+            padding: 1.5rem;
+            min-height: 400px;
+        }
+
+        .trace-container {
+            margin-bottom: 2rem;
+        }
+
+        .trace-header {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem;
+            background: var(--gray-100);
+            border-radius: 8px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .trace-header:hover {
+            background: var(--gray-200);
+        }
+
+        .trace-toggle {
+            font-size: 0.875rem;
+            color: var(--gray-500);
+        }
+
+        .trace-content {
+            margin-top: 1rem;
+            padding-left: 1rem;
+            border-left: 2px solid var(--gray-200);
+        }
+
+        .trace-item {
+            margin-bottom: 1rem;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: 6px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.875rem;
+        }
+
+        .iteration {
+            font-weight: 600;
+            color: var(--primary);
+            margin-bottom: 0.5rem;
+        }
+
+        .thinking {
+            font-style: italic;
+            color: var(--gray-600);
+            margin: 0.5rem 0;
+            padding: 0.5rem;
+            background: var(--yellow-50);
+            border-left: 3px solid var(--yellow-500);
+        }
+
+        .tool-call {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--green-600);
+            font-weight: 500;
+        }
+
+        .tool-result {
+            color: var(--gray-500);
+            font-size: 0.75rem;
+            margin-top: 0.25rem;
+        }
+
+        .tool-preview {
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: white;
+            border: 1px solid var(--gray-200);
+            border-radius: 4px;
+            font-size: 0.8rem;
+            color: var(--gray-600);
+            max-height: 100px;
+            overflow-y: auto;
+            cursor: pointer;
+            transition: max-height 0.3s ease;
+        }
+
+        .tool-preview.expanded {
+            max-height: 300px;
+        }
+
+        .tool-preview:hover {
+            border-color: var(--gray-300);
+        }
+
+        .preview-label {
+            font-weight: 500;
+            color: var(--gray-700);
+            margin-bottom: 0.25rem;
+        }
+
+        .preview-content {
+            font-family: 'Monaco', 'Consolas', monospace;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .note-content {
+            color: var(--gray-700);
+            font-style: italic;
+        }
+
+        .search-result {
+            margin: 0.25rem 0;
+            padding: 0.25rem;
+            background: var(--gray-50);
+        }
+
+        .expand-indicator {
+            float: right;
+            color: var(--gray-400);
+            font-size: 0.7rem;
+        }
+
+        .final-report {
+            line-height: 1.8;
+            font-size: 1.05rem;
+        }
+
+        .final-report h1 {
+            font-size: 1.8rem;
+            margin: 1.5rem 0 1rem;
+            color: var(--gray-900);
+            border-bottom: 2px solid var(--gray-200);
+            padding-bottom: 0.5rem;
+        }
+
+        .final-report h2 {
+            font-size: 1.4rem;
+            margin: 2rem 0 1rem;
+            color: var(--gray-800);
+        }
+
+        .final-report h3 {
+            font-size: 1.2rem;
+            margin: 1.5rem 0 0.75rem;
+            color: var(--gray-700);
+            font-weight: 600;
+        }
+
+        .finding {
+            background: #f8f9fa;
+            border-left: 4px solid var(--primary);
+            padding: 1rem 1.25rem;
+            margin: 1.5rem 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .finding-header {
+            font-weight: 600;
+            color: var(--gray-900);
+            margin-bottom: 0.5rem;
+        }
+
+        .finding-statement {
+            color: var(--gray-700);
+            margin-bottom: 0.75rem;
+        }
+
+        .finding-evidence {
+            font-size: 0.95rem;
+            color: var(--gray-600);
+            font-style: italic;
+            margin-bottom: 0.5rem;
+        }
+
+        .finding-significance {
+            font-size: 0.95rem;
+            color: var(--gray-700);
+            background: #fef3c7;
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            margin-top: 0.75rem;
+        }
+
+        .citation {
+            color: var(--primary);
+            text-decoration: none;
+            cursor: pointer;
+            border-bottom: 1px dashed var(--primary);
+            font-weight: 500;
+        }
+
+        .citation:hover {
+            background: var(--primary);
+            color: white;
+            padding: 0 0.25rem;
+            border-radius: 3px;
+            border-bottom: none;
+        }
+
+        .report-section {
+            margin: 2rem 0;
+        }
+
+        .evidence-quote {
+            background: white;
+            padding: 0.75rem 1rem;
+            border-radius: 6px;
+            margin: 0.5rem 0;
+            border: 1px solid var(--gray-200);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .streaming-text {
+            animation: fadeIn 0.3s ease-out;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--gray-500);
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--gray-300);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            padding: 1rem;
+            background: #fee;
+            color: #dc2626;
+            border-radius: 6px;
+            margin: 1rem 0;
+        }
+
+        .stats {
+            margin-top: 2rem;
+            padding: 1rem;
+            background: var(--gray-100);
+            border-radius: 8px;
+            display: flex;
+            gap: 2rem;
+            font-size: 0.875rem;
+        }
+
+        .stat {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            color: var(--gray-500);
+        }
+
+        .stat-value {
+            font-weight: 600;
+            color: var(--gray-900);
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .input-wrapper {
+                flex-direction: column;
+            }
+            
+            .example-questions {
+                gap: 0.25rem;
+            }
+            
+            .stats {
+                flex-direction: column;
+                gap: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Uruguay Interview Research</h1>
+            <p class="subtitle">AI-powered exploration of citizen consultation interviews</p>
+        </header>
+
+        <div class="chat-container">
+            <div class="input-section">
+                <div class="input-wrapper">
+                    <input 
+                        type="text" 
+                        id="questionInput" 
+                        placeholder="Ask a research question about citizen perspectives..."
+                        value="What do citizens say about healthcare access?"
+                    >
+                    <button id="submitBtn" onclick="startResearch()">Research</button>
+                </div>
+                <div class="example-questions">
+                    <button class="example-btn" onclick="setQuestion('What do citizens say about education?')">Education</button>
+                    <button class="example-btn" onclick="setQuestion('What challenges do rural communities face?')">Rural challenges</button>
+                    <button class="example-btn" onclick="setQuestion('How do citizens view security issues?')">Security</button>
+                </div>
+            </div>
+
+            <div class="results-section" id="results">
+                <div class="trace-container hidden" id="traceContainer">
+                    <div class="trace-header" onclick="toggleTrace()">
+                        <span id="traceToggle">▼</span>
+                        <span>Research Trace</span>
+                        <span class="trace-toggle" id="traceStatus">Live</span>
+                    </div>
+                    <div class="trace-content" id="traceContent"></div>
+                </div>
+                <div id="finalReport"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:8000';
+        let eventSource = null;
+        let currentJobId = null;
+        let traceExpanded = true;
+
+        function setQuestion(question) {
+            document.getElementById('questionInput').value = question;
+        }
+
+        function toggleTrace() {
+            traceExpanded = !traceExpanded;
+            const content = document.getElementById('traceContent');
+            const toggle = document.getElementById('traceToggle');
+            
+            if (traceExpanded) {
+                content.style.display = 'block';
+                toggle.textContent = '▼';
+            } else {
+                content.style.display = 'none';
+                toggle.textContent = '▶';
+            }
+        }
+
+        async function startResearch() {
+            const question = document.getElementById('questionInput').value.trim();
+            if (!question) return;
+
+            // Clear previous results
+            reportContent = '';
+            document.getElementById('traceContent').innerHTML = '';
+            document.getElementById('finalReport').innerHTML = '<div class="loading"><div class="spinner"></div> Starting research...</div>';
+            document.getElementById('traceContainer').classList.remove('hidden');
+            document.getElementById('submitBtn').disabled = true;
+
+            try {
+                // Start research job
+                const response = await fetch(`${API_URL}/research`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        question: question,
+                        provider: 'moonshot',
+                        max_iterations: 10
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to start research');
+                
+                const data = await response.json();
+                currentJobId = data.job_id;
+                
+                // Connect to SSE endpoint
+                connectSSE(currentJobId);
+                
+            } catch (error) {
+                showError(error.message);
+                document.getElementById('submitBtn').disabled = false;
+            }
+        }
+
+        function connectSSE(jobId) {
+            eventSource = new EventSource(`${API_URL}/research/${jobId}/events`);
+            
+            eventSource.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                handleEvent(data);
+            };
+
+            eventSource.onerror = (error) => {
+                console.error('SSE error:', error);
+                eventSource.close();
+                document.getElementById('submitBtn').disabled = false;
+                document.getElementById('traceStatus').textContent = 'Completed';
+            };
+        }
+
+        function handleEvent(event) {
+            const traceContent = document.getElementById('traceContent');
+            
+            switch (event.type) {
+                case 'iteration_start':
+                    const iterDiv = document.createElement('div');
+                    iterDiv.className = 'trace-item';
+                    iterDiv.innerHTML = `<div class="iteration">🔄 Iteration ${event.data.current}/${event.data.max}</div>`;
+                    iterDiv.id = `iter-${event.iteration}`;
+                    traceContent.appendChild(iterDiv);
+                    break;
+
+                case 'thinking':
+                    const currentIter = document.getElementById(`iter-${event.iteration}`);
+                    if (currentIter && event.data.content) {
+                        const thinkDiv = document.createElement('div');
+                        thinkDiv.className = 'thinking';
+                        thinkDiv.textContent = '💭 ' + event.data.content.substring(0, 200) + '...';
+                        currentIter.appendChild(thinkDiv);
+                    }
+                    break;
+
+                case 'tool_call':
+                    const toolIter = document.getElementById(`iter-${event.iteration}`);
+                    if (toolIter) {
+                        const toolDiv = document.createElement('div');
+                        toolDiv.className = 'tool-call';
+                        toolDiv.id = `tool-${event.iteration}-${event.data.tool}`;
+                        
+                        // Format tool call based on tool type
+                        let toolDisplay = '';
+                        const tool = event.data.tool;
+                        const args = event.data.args;
+                        
+                        switch(tool) {
+                            case 'get_corpus_stats':
+                                toolDisplay = `📊 Getting corpus overview...`;
+                                break;
+                            case 'list_interview_themes':
+                                toolDisplay = `🏷️ Discovering available themes...`;
+                                break;
+                            case 'search_interviews':
+                                toolDisplay = `🔍 Searching: "${args.query}"`;
+                                break;
+                            case 'search_themes':
+                                toolDisplay = `🎯 Finding themes about: "${args.keyword}"`;
+                                break;
+                            case 'get_interview_turn':
+                                toolDisplay = `📄 Reading: ${args.turn_id}`;
+                                break;
+                            case 'scratchpad_append':
+                                toolDisplay = `📝 Taking notes...`;
+                                // Add note preview for scratchpad
+                                if (args.note) {
+                                    const notePreview = document.createElement('div');
+                                    notePreview.className = 'tool-preview';
+                                    notePreview.innerHTML = `
+                                        <div class="note-content">${args.note.substring(0, 200)}${args.note.length > 200 ? '...' : ''}</div>
+                                        ${args.note.length > 200 ? '<span class="expand-indicator">Click to expand</span>' : ''}
+                                    `;
+                                    notePreview.onclick = () => togglePreview(notePreview);
+                                    notePreview.dataset.fullContent = args.note;
+                                    toolDiv.appendChild(notePreview);
+                                }
+                                break;
+                            default:
+                                toolDisplay = `🔧 ${tool}(${JSON.stringify(args).substring(0, 50)})`;
+                        }
+                        
+                        toolDiv.innerHTML = toolDisplay + toolDiv.innerHTML;
+                        toolIter.appendChild(toolDiv);
+                    }
+                    break;
+
+                case 'tool_result':
+                    const resultIter = document.getElementById(`iter-${event.iteration}`);
+                    if (resultIter) {
+                        // Find the last tool call in this iteration
+                        const toolCalls = resultIter.querySelectorAll('.tool-call');
+                        const lastTool = toolCalls[toolCalls.length - 1];
+                        if (lastTool) {
+                            const resultDiv = document.createElement('div');
+                            resultDiv.className = 'tool-result';
+                            
+                            // More informative results based on tool type
+                            const preview = event.data.metadata.preview;
+                            const size = event.data.metadata.size;
+                            const tool = event.data.tool;
+                            
+                            // Create result summary
+                            let resultText = '✅ ';
+                            if (preview && preview.includes('interviews') && preview.includes('turns')) {
+                                // Corpus stats
+                                resultText += preview;
+                            } else if (preview && preview.includes('Found') && preview.includes('results')) {
+                                // Search results
+                                const matches = preview.match(/Found (\d+) results/);
+                                if (matches) {
+                                    resultText += `Found ${matches[1]} matches`;
+                                }
+                            } else if (size > 5000) {
+                                // Interview summary
+                                resultText += `Retrieved interview (${Math.round(size/1000)}k chars)`;
+                            } else if (size > 1000) {
+                                // Theme list or search results
+                                resultText += `${Math.round(size/1000)}k chars of data`;
+                            } else {
+                                resultText += 'Completed';
+                            }
+                            
+                            resultDiv.textContent = resultText;
+                            lastTool.appendChild(resultDiv);
+                            
+                            // Add preview for certain tools
+                            if (event.data.result && shouldShowPreview(tool)) {
+                                const resultPreview = createResultPreview(tool, event.data.result);
+                                if (resultPreview) {
+                                    lastTool.appendChild(resultPreview);
+                                }
+                            }
+                        }
+                    }
+                    break;
+
+                case 'response_start':
+                    document.getElementById('finalReport').innerHTML = '<div class="final-report" id="streamingReport"></div>';
+                    document.getElementById('traceStatus').textContent = 'Generating report...';
+                    break;
+
+                case 'response_chunk':
+                    appendReportChunk(event.data.chunk);
+                    break;
+
+                case 'response_end':
+                    // Handle both streaming and non-streaming responses
+                    if (event.data.response && !reportContent) {
+                        // Non-streaming response
+                        reportContent = event.data.response;
+                        document.getElementById('finalReport').innerHTML = '<div class="final-report" id="streamingReport"></div>';
+                    }
+                    // Format the complete report
+                    formatFinalReport();
+                    document.getElementById('traceStatus').textContent = 'Completed';
+                    eventSource.close();
+                    document.getElementById('submitBtn').disabled = false;
+                    break;
+
+                case 'error':
+                    showError(event.data.error);
+                    eventSource.close();
+                    document.getElementById('submitBtn').disabled = false;
+                    break;
+
+                case 'stats':
+                    displayStats(event.data);
+                    break;
+            }
+        }
+
+        let reportContent = '';
+
+        function togglePreview(element) {
+            element.classList.toggle('expanded');
+            if (element.dataset.fullContent && element.classList.contains('expanded')) {
+                const content = element.querySelector('.note-content') || element.querySelector('.preview-content');
+                if (content) {
+                    content.textContent = element.dataset.fullContent;
+                }
+                const indicator = element.querySelector('.expand-indicator');
+                if (indicator) {
+                    indicator.textContent = 'Click to collapse';
+                }
+            } else if (element.dataset.fullContent) {
+                const content = element.querySelector('.note-content') || element.querySelector('.preview-content');
+                if (content) {
+                    content.textContent = element.dataset.fullContent.substring(0, 200) + '...';
+                }
+                const indicator = element.querySelector('.expand-indicator');
+                if (indicator) {
+                    indicator.textContent = 'Click to expand';
+                }
+            }
+        }
+
+        function shouldShowPreview(tool) {
+            return ['search_interviews', 'get_interview_turn', 'list_interview_themes', 'search_themes'].includes(tool);
+        }
+
+        function createResultPreview(tool, result) {
+            if (!result) return null;
+            
+            const preview = document.createElement('div');
+            preview.className = 'tool-preview';
+            
+            let content = '';
+            let fullContent = '';
+            
+            try {
+                // Try to parse as JSON first
+                const data = typeof result === 'string' ? JSON.parse(result) : result;
+                
+                switch(tool) {
+                    case 'search_interviews':
+                        if (data.results && data.results.length > 0) {
+                            content = `<div class="preview-label">Found ${data.results.length} matches:</div>`;
+                            data.results.slice(0, 3).forEach(r => {
+                                if (r.type === 'turn_text_match') {
+                                    content += `<div class="search-result">📄 ${r.interview_id}:${r.turn_id} - "${r.excerpt.substring(0, 100)}..."</div>`;
+                                } else if (r.type === 'theme_match') {
+                                    content += `<div class="search-result">🏷️ ${r.interview_id} - Theme: ${r.theme}</div>`;
+                                }
+                            });
+                            if (data.results.length > 3) {
+                                content += `<div style="color: var(--gray-400); font-size: 0.7rem;">...and ${data.results.length - 3} more</div>`;
+                            }
+                        }
+                        fullContent = JSON.stringify(data, null, 2);
+                        break;
+                        
+                    case 'get_interview_turn':
+                        if (data.turns && data.turns.length > 0) {
+                            const firstTurn = data.turns[0];
+                            content = `<div class="preview-label">${data.interview_id || 'Interview'} - ${firstTurn.speaker}:</div>`;
+                            content += `<div class="preview-content">"${firstTurn.text.substring(0, 300)}..."</div>`;
+                        } else if (data.type === 'interview_summary') {
+                            content = `<div class="preview-label">Interview ${data.interview_id} Summary:</div>`;
+                            content += `<div class="preview-content">${data.summary.substring(0, 300)}...</div>`;
+                            if (data.key_themes && data.key_themes.length > 0) {
+                                content += `<div style="margin-top: 0.5rem;"><strong>Themes:</strong> ${data.key_themes.slice(0, 3).map(t => t.theme || t).join(', ')}</div>`;
+                            }
+                        }
+                        fullContent = JSON.stringify(data, null, 2);
+                        break;
+                        
+                    case 'list_interview_themes':
+                    case 'search_themes':
+                        if (data.themes || data.meta_themes) {
+                            const themes = data.themes || {};
+                            const themeList = Object.entries(themes).slice(0, 5);
+                            content = `<div class="preview-label">Top themes:</div>`;
+                            themeList.forEach(([theme, info]) => {
+                                const count = typeof info === 'string' ? info : `${info.total_occurrences} occurrences`;
+                                content += `<div class="search-result">• ${theme}: ${count}</div>`;
+                            });
+                        }
+                        fullContent = JSON.stringify(data, null, 2);
+                        break;
+                }
+            } catch (e) {
+                // If not JSON, show raw text preview
+                content = `<div class="preview-content">${result.substring(0, 300)}...</div>`;
+                fullContent = result;
+            }
+            
+            if (content) {
+                preview.innerHTML = content;
+                if (fullContent.length > 300) {
+                    preview.innerHTML += '<span class="expand-indicator">Click to expand</span>';
+                    preview.dataset.fullContent = fullContent;
+                    preview.onclick = () => togglePreview(preview);
+                }
+                return preview;
+            }
+            
+            return null;
+        }
+
+        function appendReportChunk(chunk) {
+            reportContent += chunk;
+            const reportDiv = document.getElementById('streamingReport');
+            if (reportDiv) {
+                // Basic markdown parsing for streaming
+                const formatted = chunk
+                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
+                
+                const span = document.createElement('span');
+                span.className = 'streaming-text';
+                span.innerHTML = formatted;
+                reportDiv.appendChild(span);
+            }
+        }
+
+        function formatFinalReport() {
+            const reportDiv = document.getElementById('streamingReport');
+            if (!reportDiv) return;
+            
+            // Parse the complete markdown report with better formatting
+            let formatted = reportContent;
+            
+            // Parse headers
+            formatted = formatted.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
+            formatted = formatted.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+            formatted = formatted.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+            
+            // Parse findings with custom formatting
+            formatted = formatted.replace(/Finding_(\d+):\s*(.*?)\n/g, function(match, num, title) {
+                return `<div class="finding"><div class="finding-header">Finding ${num}: ${title}</div>`;
+            });
+            
+            // Parse statement, evidence, significance
+            formatted = formatted.replace(/- Statement:\s*(.*?)(?=\n-|\n\n|$)/gs, '<div class="finding-statement">$1</div>');
+            formatted = formatted.replace(/- Evidence:\s*(.*?)(?=\n-|\n\n|$)/gs, '<div class="finding-evidence">Evidence: $1</div>');
+            formatted = formatted.replace(/- Significance:\s*(.*?)(?=\n\n|$)/gs, '<div class="finding-significance">💡 $1</div></div>');
+            
+            // Parse citations
+            formatted = formatted.replace(/Interview (\d{3})/g, '<a class="citation" onclick="viewInterview(\'$1\')">Interview $1</a>');
+            formatted = formatted.replace(/\((\d{3}):([\d-]+)\)/g, '(<a class="citation" onclick="viewTurn(\'$1:$2\')">$1:$2</a>)');
+            formatted = formatted.replace(/\(`(\d{3}):([\d-]+)`\)/g, '(<a class="citation" onclick="viewTurn(\'$1:$2\')">$1:$2</a>)');
+            
+            // Parse quotes
+            formatted = formatted.replace(/"([^"]+)"/g, function(match, quote) {
+                if (quote.length > 50) {
+                    return `<div class="evidence-quote">"${quote}"</div>`;
+                }
+                return `"${quote}"`;
+            });
+            
+            // Parse bold and italic
+            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            // Parse paragraphs
+            formatted = formatted.replace(/\n\n/g, '</p><p>');
+            formatted = '<p>' + formatted + '</p>';
+            
+            // Clean up empty paragraphs
+            formatted = formatted.replace(/<p>\s*<\/p>/g, '');
+            formatted = formatted.replace(/<p>(<h[123]>)/g, '$1');
+            formatted = formatted.replace(/(<\/h[123]>)<\/p>/g, '$1');
+            
+            reportDiv.innerHTML = formatted;
+        }
+
+        function displayStats(stats) {
+            const reportDiv = document.getElementById('finalReport');
+            const statsDiv = document.createElement('div');
+            statsDiv.className = 'stats';
+            statsDiv.innerHTML = `
+                <div class="stat">
+                    <span class="stat-label">Duration</span>
+                    <span class="stat-value">${Math.round(stats.duration)}s</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Iterations</span>
+                    <span class="stat-value">${stats.iterations}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Tool Calls</span>
+                    <span class="stat-value">${stats.toolCalls}</span>
+                </div>
+                <div class="stat">
+                    <span class="stat-label">Tokens</span>
+                    <span class="stat-value">${(stats.inputTokens + stats.outputTokens).toLocaleString()}</span>
+                </div>
+            `;
+            reportDiv.appendChild(statsDiv);
+        }
+
+        function showError(message) {
+            const reportDiv = document.getElementById('finalReport');
+            reportDiv.innerHTML = `<div class="error">Error: ${message}</div>`;
+        }
+
+        function viewInterview(id) {
+            window.open(`${API_URL}/interviews/${id}`, '_blank');
+        }
+
+        function viewTurn(turnId) {
+            // In a real implementation, this would open a modal or navigate to the turn
+            alert(`View turn: ${turnId}`);
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('questionInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !document.getElementById('submitBtn').disabled) {
+                startResearch();
+            }
+        });
+    </script>
+</body>
+</html>

@@ -395,6 +395,70 @@ async def test_websocket_echo(websocket: WebSocket):
     except WebSocketDisconnect:
         print(f"[{datetime.now()}] Test WebSocket disconnected")
 
+@app.get("/research/{job_id}/events")
+async def research_events_sse(job_id: str):
+    """Server-sent events endpoint for research updates"""
+    from fastapi.responses import StreamingResponse
+    
+    print(f"[{datetime.now()}] SSE connection for job {job_id}")
+    
+    if job_id not in jobs:
+        raise HTTPException(status_code=404, detail="Job not found")
+    
+    async def event_generator():
+        # Subscribe to events from event store
+        event_channel = f"job:{job_id}"
+        queue = await event_store.subscribe(event_channel)
+        print(f"[{datetime.now()}] SSE subscribed to channel: {event_channel}")
+        
+        try:
+            while True:
+                try:
+                    # Wait for events with timeout
+                    event = await asyncio.wait_for(queue.get(), timeout=30.0)
+                    
+                    # Format as SSE
+                    json_str = json.dumps(event, cls=DateTimeEncoder)
+                    yield f"data: {json_str}\n\n"
+                    print(f"[{datetime.now()}] SSE sent event: {event.get('type')}")
+                    
+                    # Check if this is a terminal event
+                    if event.get('type') in ['response_end', 'error', 'result']:
+                        print(f"[{datetime.now()}] SSE terminal event, closing")
+                        break
+                        
+                except asyncio.TimeoutError:
+                    # Send keepalive
+                    yield ": keepalive\n\n"
+                    
+                    # Check if job is complete
+                    if job_id in jobs and jobs[job_id]['status'] in ['completed', 'failed']:
+                        print(f"[{datetime.now()}] SSE job completed, closing")
+                        break
+                        
+        except Exception as e:
+            print(f"[{datetime.now()}] SSE error: {e}")
+            error_event = {
+                'type': 'error',
+                'data': {'error': str(e)},
+                'timestamp': datetime.now().isoformat()
+            }
+            yield f"data: {json.dumps(error_event)}\n\n"
+        finally:
+            # Cleanup
+            event_store.unsubscribe(event_channel, queue)
+            print(f"[{datetime.now()}] SSE connection closed for job {job_id}")
+    
+    return StreamingResponse(
+        event_generator(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no"  # Disable nginx buffering
+        }
+    )
+
 @app.get("/interviews", response_model=List[InterviewSummary])
 async def get_interviews():
     """Get list of all interviews"""
