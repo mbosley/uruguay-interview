@@ -22,8 +22,14 @@ make run-ui
 # Run a specific research question
 make agent QUESTION="What do citizens say about healthcare access?"
 
-# Interactive research session
-make run-agent
+# With specific provider
+make agent PROVIDER=groq QUESTION="What are rural concerns?"
+
+# With debug logging
+make agent DEBUG=1 QUESTION="test question"
+
+# With custom output width
+python interview_research_agent.py --width 60 "your question"
 ```
 
 ### Using the Streamlit Demo
@@ -52,11 +58,16 @@ This system analyzes 37 citizen consultation interviews from Uruguay (May 28-29,
 - **AI-powered research agent** for autonomous exploration of interview data
 - **Real-time web interface** with live research visualization
 - **Command-line tools** for batch processing and scripting
-- **Multi-provider LLM support** (Moonshot, Groq)
+- **Multi-provider LLM support** (Moonshot, Groq, OpenAI)
 - **WebSocket streaming** for real-time updates
+- **UN-style report generation** with comprehensive citations in [[interview:turn]] format
+- **Enhanced CLI output** with text wrapping and clear sections
+- **Debug mode** for troubleshooting and development
+- **Modular architecture** for easy extension and maintenance
 
 ## Architecture
 
+### System Overview
 ```
 ┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
 │   React UI      │────▶│   FastAPI        │────▶│ Research Agent  │
@@ -68,6 +79,20 @@ This system analyzes 37 citizen consultation interviews from Uruguay (May 28-29,
                         │  Interview       │     │   Scratchpad    │
                         │  Corpus          │     │   Storage       │
                         └──────────────────┘     └─────────────────┘
+```
+
+### Modular Agent Architecture
+The research agent has been refactored into a clean modular structure:
+
+```
+src/agent/
+├── research_agent.py    # Core agent logic and research loop
+├── logger.py           # Enhanced logging with colors and formatting
+├── config.py          # Configuration management
+├── tools.py           # Tool execution and preview generation
+├── events.py          # Event handling for real-time updates
+├── prompts.py         # System prompts and instructions
+└── report_generator.py # UN-style report generation
 ```
 
 ## Installation
@@ -146,6 +171,9 @@ make agent PROVIDER=groq MAX_ITER=20 QUESTION="your question"
 
 # Debug mode with detailed logging
 make debug-agent QUESTION="your question"
+
+# With custom width
+make agent WIDTH=60 QUESTION="your question"
 ```
 
 ### Streamlit Demo
@@ -200,6 +228,33 @@ Event types:
 - `tool_result`: Tool execution result
 - `response_end`: Final research summary
 
+## Command Line Options
+
+### Research Agent CLI
+
+```bash
+python interview_research_agent.py [options] "research question"
+
+Options:
+  --max-iterations N    Maximum iterations (default: 30)
+  --provider NAME       LLM provider: moonshot, groq, openai
+  --model NAME          Override default model for provider
+  --research            Enable research mode (shows scratchpad)
+  --debug               Enable debug logging
+  --width N             Output width in characters (default: 80)
+  --session-id ID       Custom session ID for tracking
+```
+
+### Make Commands
+
+```bash
+make agent QUESTION="..." PROVIDER=groq MAX_ITER=20 DEBUG=1
+make healthcare       # Predefined healthcare research
+make education        # Predefined education research
+make rural-services   # Predefined rural services research
+make security         # Predefined security research
+```
+
 ## Configuration
 
 ### LLM Providers
@@ -225,6 +280,28 @@ Available tools in `interview_research_tools.py`:
 ### Project Structure
 
 See [PROJECT_STRUCTURE.md](PROJECT_STRUCTURE.md) for detailed layout.
+
+### Key Features
+
+#### Citation Format
+All citations use a hyperlink-friendly format:
+- Single turn: `[[064:23]]` (interview 064, turn 23)
+- Turn range: `[[071:45-50]]` (interview 071, turns 45-50)
+- Interview summary: `[[068:summary]]` (summary of interview 068)
+
+#### Enhanced Logging
+- Descriptive tool calls instead of raw JSON
+- Full scratchpad notes displayed when added
+- Informative search result previews
+- Text wrapping with configurable width
+- Debug mode for detailed execution traces
+
+#### UN-Style Reports
+The agent generates comprehensive reports following UN documentation standards:
+- Executive summary with key findings
+- Detailed analysis sections
+- Extensive citations throughout
+- Evidence-based conclusions
 
 ### Running Tests
 
@@ -296,6 +373,10 @@ docker-compose up -d
 - [Provider Configuration](docs/PROVIDER_CONFIGURATION.md) - Detailed LLM provider setup
 - [Project Structure](PROJECT_STRUCTURE.md) - Complete directory layout
 - [Trace Display Fix](docs/trace_fix_report.md) - WebSocket trace implementation
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed history of changes and improvements.
 
 ## Contributing
 

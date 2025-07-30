@@ -26,24 +26,26 @@ help:
 	@echo "  pipeline       Run full data pipeline (parse + enrich + consolidate)"
 	@echo ""
 	@echo "🤖 Research agent targets:"
-	@echo "  agent          Test the autonomous research agent"
-	@echo "  run-agent      Interactive agent session (CLI)"
-	@echo "  research       Agent with extended logging (2000 char excerpts)"
+	@echo "  agent          Run the autonomous research agent"
 	@echo "  recursive      Agent with delegation capabilities highlighted"
 	@echo "  test-recursive Test recursive sub-agent spawning"
 	@echo ""
 	@echo "📊 Variables:"
 	@echo "  QUESTION       Research question for agent (default: healthcare)"
-	@echo "  MAX_ITER       Max agent iterations (default: 15)"
+	@echo "  MAX_ITER       Max agent iterations (default: 30)"
 	@echo "  PROVIDER       LLM provider for agent (moonshot, groq)"
 	@echo "  MODEL          Specific model name (for enrichment)"
+	@echo "  DEBUG          Enable debug logging (set to any value)"
 	@echo ""
 	@echo "💡 Examples:"
 	@echo "  make run-api                     # Start API server"
 	@echo "  make run-ui                      # Start React UI (in new terminal)"
 	@echo "  make run-demo                    # Start Streamlit demo"
+	@echo "  make agent                       # Run with default question"
 	@echo "  make agent QUESTION='rural education' MAX_ITER=20"
-	@echo "  make run-agent PROVIDER=groq     # Fast CLI research"
+	@echo "  make agent PROVIDER=groq         # Fast CLI research"
+	@echo "  make agent PROVIDER=openai       # Cost-efficient o4-mini"
+	@echo "  make agent DEBUG=1               # With debug logging"
 
 # Variables
 VENV := venv
@@ -61,8 +63,9 @@ ENRICHED_CORPUS := $(ENRICHED_DIR)/_enriched_corpus_summary.json
 # Default research question and max iterations
 QUESTION ?= "What do citizens say about healthcare access and quality in Uruguay?"
 MAX_ITER ?= 30
+DEBUG ?= # Set to any value to enable debug mode
 
-# LLM provider options
+# LLM provider options (moonshot, groq, openai)
 PROVIDER ?= # Use config default
 MODEL ?= # Use config default
 
@@ -145,50 +148,21 @@ agent: $(ENRICHED_CORPUS)
 	fi
 	@mkdir -p results logs
 	@if [ -n "$(PROVIDER)" ]; then \
-		$(PYTHON) interview_research_agent_improved.py --provider=$(PROVIDER) "$(QUESTION)"; \
+		if [ -n "$(DEBUG)" ]; then \
+			$(PYTHON) interview_research_agent.py --research --debug --provider=$(PROVIDER) --max-iterations $(MAX_ITER) "$(QUESTION)"; \
+		else \
+			$(PYTHON) interview_research_agent.py --research --provider=$(PROVIDER) --max-iterations $(MAX_ITER) "$(QUESTION)"; \
+		fi \
 	else \
-		$(PYTHON) interview_research_agent_improved.py "$(QUESTION)"; \
+		if [ -n "$(DEBUG)" ]; then \
+			$(PYTHON) interview_research_agent.py --research --debug --max-iterations $(MAX_ITER) "$(QUESTION)"; \
+		else \
+			$(PYTHON) interview_research_agent.py --research --max-iterations $(MAX_ITER) "$(QUESTION)"; \
+		fi \
 	fi
-
-# Research mode with extra detailed logging
-research: $(ENRICHED_CORPUS)
-	@echo "🔬 Running research agent with extra detailed logging..."
-	@echo "📋 Question: $(QUESTION)"
-	@mkdir -p results logs
-	$(PYTHON) interview_research_agent_improved.py --research "$(QUESTION)"
 
 # Original agent (kept for compatibility)
 agent-original: $(ENRICHED_CORPUS)
-	@echo "🤖 Running autonomous research agent (original version)..."
-	@echo "📋 Question: $(QUESTION)"
-	@mkdir -p results logs
-	$(PYTHON) interview_research_agent.py --question "$(QUESTION)" --max-iterations $(MAX_ITER)
-
-run-agent: $(ENRICHED_CORPUS)
-	@echo "🎯 Starting interactive research agent session..."
-	@if [ -n "$(PROVIDER)" ]; then \
-		echo "Provider: $(PROVIDER)"; \
-	fi
-	@if [ -n "$(QUESTION)" ]; then \
-		echo "📋 Question: $(QUESTION)"; \
-		mkdir -p results logs; \
-		if [ -n "$(PROVIDER)" ]; then \
-			$(PYTHON) interview_research_agent_improved.py --provider=$(PROVIDER) "$(QUESTION)"; \
-		else \
-			$(PYTHON) interview_research_agent_improved.py "$(QUESTION)"; \
-		fi \
-	else \
-		echo "Enter your research question when prompted."; \
-		mkdir -p results logs; \
-		if [ -n "$(PROVIDER)" ]; then \
-			$(PYTHON) interview_research_agent_improved.py --provider=$(PROVIDER); \
-		else \
-			$(PYTHON) interview_research_agent_improved.py; \
-		fi \
-	fi
-
-# Original agent (kept for compatibility)
-run-agent-original: $(ENRICHED_CORPUS)
 	@echo "🎯 Starting interactive research agent session (original version)..."
 	@echo "Enter your research question when prompted."
 	@mkdir -p results logs
@@ -208,7 +182,7 @@ recursive: $(ENRICHED_CORPUS)
 	@echo "📋 Question: $(QUESTION)"
 	@echo "💡 Tip: Use a broad question to trigger sub-agent delegation"
 	@mkdir -p results logs
-	$(PYTHON) interview_research_agent_improved.py --research "$(QUESTION)"
+	$(PYTHON) interview_research_agent.py --research "$(QUESTION)"
 
 # Development and testing targets
 test-cli: $(ENRICHED_CORPUS)
