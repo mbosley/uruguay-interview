@@ -228,7 +228,7 @@ class EnrichedUruguayCLI:
         
         return summary
     
-    def search(self, query: str, interview_id: Optional[str] = None) -> Dict:
+    def search(self, query: str, interview_id: Optional[str] = None, aggregate: bool = True) -> Dict:
         """Search through enriched interviews"""
         results = []
         
@@ -246,6 +246,10 @@ class EnrichedUruguayCLI:
             interview_results = self._search_interview(interview, query)
             if interview_results:
                 results.extend(interview_results)
+        
+        # If aggregate is True and we have many results, return aggregated view
+        if aggregate and len(results) > 20:
+            return self._aggregate_search_results(query, results)
         
         return {
             "type": "search_results",
@@ -326,7 +330,48 @@ class EnrichedUruguayCLI:
         """Add simple highlighting to matched text"""
         return re.sub(f"({re.escape(query)})", r"**\1**", text, flags=re.IGNORECASE)
     
-    def list_themes(self, interview_id: Optional[str] = None, verbose: bool = False, summary_only: bool = False, filter_keyword: Optional[str] = None) -> Dict:
+    def _aggregate_search_results(self, query: str, results: List[Dict]) -> Dict:
+        """Aggregate search results for large result sets"""
+        # Count matches by interview
+        matches_by_interview = {}
+        for result in results:
+            interview_id = result["interview_id"]
+            if interview_id not in matches_by_interview:
+                matches_by_interview[interview_id] = {
+                    "count": 0,
+                    "turn_ids": []
+                }
+            matches_by_interview[interview_id]["count"] += 1
+            
+            # Collect turn IDs for text matches
+            if result["type"] == "turn_text_match":
+                matches_by_interview[interview_id]["turn_ids"].append(result["turn_id"])
+        
+        # Sort interviews by match count
+        sorted_interviews = sorted(
+            matches_by_interview.items(),
+            key=lambda x: x[1]["count"],
+            reverse=True
+        )
+        
+        # Build top interviews list
+        top_interviews = []
+        for interview_id, data in sorted_interviews[:5]:  # Top 5
+            top_interviews.append({
+                "interview_id": interview_id,
+                "match_count": data["count"],
+                "sample_turns": data["turn_ids"][:3]  # First 3 turn IDs
+            })
+        
+        return {
+            "type": "aggregated_search_results",
+            "query": query,
+            "total_matches": len(results),
+            "interviews_with_matches": len(matches_by_interview),
+            "top_interviews": top_interviews
+        }
+    
+    def list_themes(self, interview_id: Optional[str] = None, verbose: bool = False, summary_only: bool = False, filter_keyword: Optional[str] = None, meta_theme_filter: Optional[str] = None) -> Dict:
         """List all themes across interviews with hierarchical structure"""
         theme_summary = {}
         
@@ -355,14 +400,18 @@ class EnrichedUruguayCLI:
                     if theme_name not in theme_summary:
                         theme_summary[theme_name] = {
                             "interviews": [],
+                            "interview_details": {},  # Store turn info per interview
                             "total_occurrences": 0,
                             "interview_count": 0,
                             "meta_theme": theme_obj.get("meta_theme", ""),
                             "issue_tags": theme_obj.get("issue_tags", [])
                         }
                     
-                    # Count primary evidence and elaboration turns
-                    turn_count = len(theme_obj.get("primary_evidence", [])) + len(theme_obj.get("elaboration_turns", []))
+                    # Get all turn IDs
+                    primary_turns = theme_obj.get("primary_evidence", [])
+                    elaboration_turns = theme_obj.get("elaboration_turns", [])
+                    all_turns = primary_turns + elaboration_turns
+                    turn_count = len(all_turns)
                     
                     if verbose:
                         theme_summary[theme_name]["interviews"].append({
@@ -373,6 +422,12 @@ class EnrichedUruguayCLI:
                         })
                     else:
                         theme_summary[theme_name]["interviews"].append(iid)
+                    
+                    # Always store turn details for summary mode
+                    theme_summary[theme_name]["interview_details"][iid] = {
+                        "turns": all_turns,
+                        "turn_count": turn_count
+                    }
                     
                     theme_summary[theme_name]["total_occurrences"] += turn_count
                     theme_summary[theme_name]["interview_count"] += 1
@@ -399,23 +454,64 @@ class EnrichedUruguayCLI:
                 
                 for theme, data in sorted_themes.items():
                     meta_theme = data.get("meta_theme", "uncategorized")
+                    # Skip empty meta_theme names
+                    if not meta_theme or not meta_theme.strip():
+                        meta_theme = "uncategorized"
+                    
                     if meta_theme not in hierarchy:
                         hierarchy[meta_theme] = {
                             "name": meta_themes.get(meta_theme, {}).get("name", meta_theme),
                             "themes": {}
                         }
-                    hierarchy[meta_theme]["themes"][theme] = f"{data['total_occurrences']} turns in {data['interview_count']} interviews"
+                    hierarchy[meta_theme]["themes"][theme] = {
+                        "total_turns": data['total_occurrences'],
+                        "interview_count": data['interview_count'],
+                        "interviews": data.get('interviews', []),
+                        "interview_details": data.get('interview_details', {})
+                    }
+                
+                # Filter by specific meta_theme if requested
+                if meta_theme_filter:
+                    # Find matching meta_theme (case-insensitive)
+                    meta_theme_lower = meta_theme_filter.lower()
+                    filtered_hierarchy = {}
+                    
+                    for key, value in hierarchy.items():
+                        if (key.lower() == meta_theme_lower or 
+                            value.get("name", "").lower() == meta_theme_lower or
+                            meta_theme_lower in key.lower() or
+                            meta_theme_lower in value.get("name", "").lower()):
+                            filtered_hierarchy[key] = value
+                    
+                    if filtered_hierarchy:
+                        hierarchy = filtered_hierarchy
+                    else:
+                        # No matches found
+                        return {
+                            "type": "theme_hierarchy",
+                            "meta_themes": {},
+                            "total_themes": 0,
+                            "mode": "meta_theme_filter",
+                            "filter": meta_theme_filter,
+                            "error": f"No meta-theme found matching '{meta_theme_filter}'"
+                        }
                 
                 return {
                     "type": "theme_hierarchy",
                     "meta_themes": hierarchy,
-                    "total_themes": len(sorted_themes),
-                    "mode": "summary"
+                    "total_themes": sum(len(m["themes"]) for m in hierarchy.values()),
+                    "mode": "summary",
+                    "filtered": filter_keyword is not None,
+                    "meta_theme_filter": meta_theme_filter
                 }
             else:
                 # Fallback to flat list if no consolidation
                 summary_dict = {
-                    theme: f"{data['total_occurrences']} turns in {data['interview_count']} interviews"
+                    theme: {
+                        "total_turns": data['total_occurrences'],
+                        "interview_count": data['interview_count'],
+                        "interviews": data.get('interviews', [])
+                    }
                     for theme, data in sorted_themes.items()
                 }
                 return {
@@ -466,6 +562,9 @@ class EnrichedUruguayCLI:
         all_speakers = set()
         total_quotes = 0
         
+        # Track meta-theme breakdown
+        meta_theme_breakdown = {}
+        
         for interview_id in self.interview_files.keys():
             interview = self._load_interview(interview_id)
             if not interview:
@@ -481,9 +580,22 @@ class EnrichedUruguayCLI:
             
             for theme_obj in key_themes:
                 if isinstance(theme_obj, dict):
-                    all_themes.add(theme_obj.get("theme", ""))
-                    if theme_obj.get("meta_theme"):
-                        all_meta_themes.add(theme_obj.get("meta_theme"))
+                    theme = theme_obj.get("theme", "")
+                    meta_theme = theme_obj.get("meta_theme", "uncategorized")
+                    
+                    if theme:
+                        all_themes.add(theme)
+                    
+                    if meta_theme:
+                        all_meta_themes.add(meta_theme)
+                        
+                        # Track in breakdown
+                        if meta_theme not in meta_theme_breakdown:
+                            meta_theme_breakdown[meta_theme] = {
+                                "name": self.theme_consolidation.get("meta_themes", {}).get(meta_theme, {}).get("name", meta_theme),
+                                "themes": set()
+                            }
+                        meta_theme_breakdown[meta_theme]["themes"].add(theme)
             
             all_issue_tags.update(annotation.get("issue_tags", []))
             all_speakers.update(interview.get("indexes", {}).get("turns_by_speaker", {}).keys())
@@ -508,6 +620,16 @@ class EnrichedUruguayCLI:
                 "total_meta_themes": len(self.theme_consolidation.get("meta_themes", {})),
                 "total_issue_tags": len(self.theme_consolidation.get("metadata", {}).get("issue_tags", {}))
             }
+            
+            # Convert theme sets to counts for JSON serialization
+            meta_theme_dict = {}
+            for meta_key, meta_info in meta_theme_breakdown.items():
+                meta_theme_dict[meta_key] = {
+                    "name": meta_info["name"],
+                    "theme_count": len(meta_info["themes"])
+                }
+            
+            stats_result["meta_theme_breakdown"] = meta_theme_dict
         
         return stats_result
 
@@ -535,6 +657,7 @@ def main():
     themes_parser.add_argument('--verbose', action='store_true', help='Include all turn IDs (generates large output)')
     themes_parser.add_argument('--summary', action='store_true', help='Ultra-concise output (just counts)')
     themes_parser.add_argument('--filter', help='Filter themes by keyword')
+    themes_parser.add_argument('--meta-theme', help='Show detailed themes for a specific meta-theme')
     
     # Stats command
     stats_parser = subparsers.add_parser('stats', help='Show corpus statistics')
@@ -558,7 +681,8 @@ def main():
             args.interview, 
             verbose=args.verbose if hasattr(args, 'verbose') else False,
             summary_only=args.summary if hasattr(args, 'summary') else False,
-            filter_keyword=args.filter if hasattr(args, 'filter') else None
+            filter_keyword=args.filter if hasattr(args, 'filter') else None,
+            meta_theme_filter=args.meta_theme if hasattr(args, 'meta_theme') else None
         )
     elif args.command == 'stats':
         result = cli.stats()

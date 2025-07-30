@@ -104,29 +104,98 @@ class AgentLogger:
     
     def tool_call(self, tool_name, args):
         """Log tool usage"""
-        # Format args nicely
-        if args:
-            args_str = json.dumps(args, ensure_ascii=False)
-            limit = 1000 if self.research_mode else 300
-            if len(args_str) > limit:
-                args_str = args_str[:limit-3] + "..."
+        # Create more informative descriptions based on tool and args
+        if tool_name == "search_interviews" and args.get("query"):
+            desc = f'Searching for "{args["query"]}"'
+        elif tool_name == "get_interview_turn" and args.get("turn_id"):
+            turn_id = args["turn_id"]
+            if ":" in turn_id and turn_id.endswith(":"):
+                desc = f"Getting summary of interview {turn_id[:-1]}"
+            elif ":" in turn_id and "-" in turn_id:
+                desc = f"Reading turns {turn_id}"
+            elif ":" in turn_id:
+                desc = f"Reading turn {turn_id}"
+            else:
+                desc = f"Getting {turn_id}"
+        elif tool_name == "list_interview_themes":
+            if args.get("interview_id"):
+                desc = f"Listing themes for interview {args['interview_id']}"
+            else:
+                desc = "Getting all 121 themes across corpus"
+        elif tool_name == "scratchpad_append" and args.get("note"):
+            note = args["note"]
+            # Show first line or up to 100 chars of the note
+            lines = note.strip().split('\n')
+            if lines and lines[0]:
+                preview = lines[0][:100] + "..." if len(lines[0]) > 100 else lines[0]
+            else:
+                preview = note[:100] + "..." if len(note) > 100 else note
+            desc = f"Taking notes: {preview}"
+        elif tool_name == "scratchpad_read":
+            desc = "Reading research notes"
+        elif tool_name == "get_corpus_stats":
+            desc = "Getting corpus statistics"
+        elif tool_name == "search_themes" and args.get("keyword"):
+            desc = f'Searching themes for "{args["keyword"]}"'
+        elif tool_name == "spawn_sub_agent" and args.get("question"):
+            q_preview = args["question"][:50] + "..." if len(args["question"]) > 50 else args["question"]
+            desc = f'Delegating: "{q_preview}"'
         else:
-            args_str = "{}"
+            # Fallback to original format
+            if args:
+                args_str = json.dumps(args, ensure_ascii=False)
+                limit = 1000 if self.research_mode else 300
+                if len(args_str) > limit:
+                    args_str = args_str[:limit-3] + "..."
+            else:
+                args_str = "{}"
+            desc = f"{tool_name}({args_str})"
         
-        self.logger.info(f"🔧 {tool_name}({args_str})")
+        self.logger.info(f"🔧 {desc}")
     
-    def tool_result(self, size, preview=None):
-        """Log tool result"""
+    def tool_result(self, size, preview=None, tool_name=None, result=None):
+        """Log tool result with more context"""
         size_str = self._format_size(size)
+        
+        # Extract meaningful info from results
+        extra_info = ""
+        if tool_name == "search_interviews" and result:
+            try:
+                # Count matches in different categories
+                lines = result.strip().split('\n')
+                theme_matches = sum(1 for line in lines if line.startswith("THEME MATCH:"))
+                tag_matches = sum(1 for line in lines if line.startswith("TAG MATCH:"))
+                text_matches = sum(1 for line in lines if line.startswith("MATCH:"))
+                if theme_matches or tag_matches or text_matches:
+                    parts = []
+                    if theme_matches: parts.append(f"{theme_matches} themes")
+                    if tag_matches: parts.append(f"{tag_matches} tags")
+                    if text_matches: parts.append(f"{text_matches} text matches")
+                    extra_info = f" Found: {', '.join(parts)}"
+            except:
+                pass
+        elif tool_name == "list_interview_themes" and result:
+            try:
+                # Count unique themes
+                lines = [l.strip() for l in result.strip().split('\n') if l.strip() and not l.startswith('Theme occurrences')]
+                theme_count = len([l for l in lines if ': ' in l])
+                if theme_count:
+                    extra_info = f" {theme_count} unique themes listed"
+            except:
+                pass
+        elif tool_name == "get_interview_turn" and ":" in str(preview or ""):
+            # Already has good info in preview
+            pass
+        
         if preview:
             # Clean preview
             preview = preview.strip()
             limit = 2000 if self.research_mode else 400
             if len(preview) > limit:
                 preview = preview[:limit-3] + "..."
-            self.logger.info(f"   ✅ {size_str} | Preview: {preview}")
+            self.logger.info(f"✅ {size_str}{extra_info} | {preview}")
         else:
-            self.logger.info(f"   ✅ {size_str}")
+            self.logger.info(f"✅ {size_str}{extra_info}")
     
     def scratchpad_entry(self, note):
         """Log scratchpad notes in a special way"""
@@ -192,7 +261,7 @@ class AgentLogger:
 class InterviewResearchAgent:
     def __init__(self, api_key=None, model=None, verbose=False, research_mode=False, 
                  depth=0, max_depth=3, parent_session_id=None, is_sub_agent=False, provider=None,
-                 event_callback=None):
+                 event_callback=None, **kwargs):
         
         # Get provider configuration
         self.provider_config = get_provider_config(provider)
@@ -226,6 +295,10 @@ class InterviewResearchAgent:
         self.max_depth = max_depth
         self.parent_session_id = parent_session_id
         self.is_sub_agent = is_sub_agent
+        
+        # Configuration options
+        # Streaming removed for simplicity
+        self.include_full_results = kwargs.get('include_full_results', True)
         
         # Track some stats
         self.stats = {
@@ -261,6 +334,44 @@ class InterviewResearchAgent:
         # Return unique sorted list
         return sorted(list(set([f"Interview {id}" for id in matches])))[:10]
     
+    def _generate_preview(self, tool_name: str, result: str) -> str:
+        """Generate informative preview based on tool type"""
+        try:
+            if tool_name == "get_corpus_stats":
+                data = json.loads(result)
+                return f"{data.get('total_interviews', 0)} interviews, {data.get('total_turns', 0)} turns"
+            
+            elif tool_name == "search_interviews":
+                data = json.loads(result)
+                results = data.get('results', [])
+                return f"Found {len(results)} results"
+            
+            elif tool_name == "get_interview_turn":
+                data = json.loads(result)
+                if data.get('type') == 'interview_summary':
+                    return f"Interview {data.get('interview_id', '')} summary"
+                elif data.get('turns'):
+                    return f"{len(data.get('turns', []))} turns retrieved"
+            
+            elif tool_name == "list_interview_themes":
+                data = json.loads(result)
+                # Handle both regular and summary mode
+                if 'meta_themes' in data:
+                    # Count themes across all meta-themes, excluding uncategorized
+                    theme_count = 0
+                    for meta_theme, meta_data in data['meta_themes'].items():
+                        if meta_theme != "uncategorized" and 'themes' in meta_data:
+                            theme_count += len(meta_data['themes'])
+                else:
+                    theme_count = len(data.get('themes', {}))
+                return f"{theme_count} themes found"
+            
+            else:
+                return result[:200] + "..." if len(result) > 200 else result
+                
+        except:
+            return result[:200] + "..." if len(result) > 200 else result
+    
     async def autonomous_research(self, research_question, max_iterations=15):
         """Main research method with improved logging"""
         
@@ -283,17 +394,22 @@ class InterviewResearchAgent:
 
 Research Question: {research_question}
 
-Your task is to explore this question thoroughly using the available tools. 
+ITERATION BUDGET: You have {max_iterations} iterations to complete your research.
+
+RESEARCH DEPTH GUIDANCE:
+{'🚀 QUICK EXPLORATION (3-5 iterations): Focus on high-level patterns. Use themes list and 2-3 strategic searches. Get key examples but avoid exhaustive coverage. Prioritize breadth over depth.' if max_iterations <= 5 else '📊 THOROUGH RESEARCH (6-10 iterations): Balance breadth and depth. Explore themes, conduct multiple searches, examine 4-6 key interviews. Follow interesting patterns but stay focused on the core question.' if max_iterations <= 10 else '🔬 EXHAUSTIVE INVESTIGATION (11-15 iterations): Deep dive into all aspects. Explore edge cases, contradictions, and nuanced patterns. Follow multiple research threads. Comprehensive citation coverage.'}
+
+Your task is to explore this question with appropriate depth given your iteration budget. 
 
 IMPORTANT: 
 - If the research question contains specific instructions about which tools to use (e.g., "use spawn_sub_agent", "just run get_corpus_stats"), follow those instructions directly without going through all phases.
 - For testing scenarios or when explicitly asked to demonstrate a tool, skip the full research cycle.
 - Otherwise, use this recommended research cycle for thorough research:
 
-📊 PHASE 1: ORIENTATION (Start here for general research)
-- Use `get_corpus_stats()` to understand the corpus size and scope
+📊 PHASE 1: ORIENTATION (Adjust based on iteration budget)
+- {'QUICK (3-5 iter): Skip corpus stats, go straight to theme list' if max_iterations <= 5 else 'Use `get_corpus_stats()` to understand the corpus size and scope'}
 - Use `list_interview_themes()` to see all themes - this reveals citizen concerns
-- Use `search_themes(keyword)` to explore themes related to your question
+- {'QUICK: Pick 1-2 most relevant themes only' if max_iterations <= 5 else 'Use `search_themes(keyword)` to explore themes related to your question' if max_iterations <= 10 else 'DEEP: Explore multiple theme variations and edge cases'}
 - Look for patterns, unexpected themes, and research directions
 
 📝 PHASE 2: PLANNING (Use scratchpad to strategize)
@@ -327,7 +443,26 @@ THIRD WAVE - Cross-cutting themes:
 
 This structured approach should reveal both depth and breadth."
 
-🔍 PHASE 3: TARGETED EXPLORATION (Execute your plan)
+📊 PHASE 3: BREADTH ASSESSMENT (Essential for Research Overview)
+Before diving deep, assess how widespread your topic is:
+- Use multiple `search_interviews()` calls with varied terms to capture full breadth
+- Example for economy: search "economía", "trabajo", "empleo", "crisis económica", "desempleo"
+- Count unique interviews mentioning the topic
+- Note intensity: some interviews mention briefly, others discuss extensively
+- Track WHO discusses it (use interview summaries to identify speakers)
+- Identify geographic patterns from interview metadata
+
+BREADTH TRACKING EXAMPLE:
+scratchpad_append("BREADTH ASSESSMENT:
+- 'economía': 15 interviews (064, 068, 088...)
+- 'empleo': 18 interviews (063, 064, 076...)
+- 'trabajo': 22 interviews (overlaps with empleo)
+- Total unique: 24 of 35 interviews discuss economic themes
+- Rural concentration: 16/18 rural interviews vs 8/17 urban
+- Key voices: cooperatives (063), teachers (068), dairy leaders (088)")
+
+🔍 PHASE 4: TARGETED EXPLORATION (Scale to your iteration budget)
+- {'QUICK: 1-2 searches, 2-3 key interview excerpts maximum' if max_iterations <= 5 else 'THOROUGH: Multiple searches, 4-6 interviews, key quotes' if max_iterations <= 10 else 'DEEP: Exhaustive searches, follow all leads, examine contradictions'}
 - Use `get_interview_turn("071:")` to get interview summaries first
 - Use `search_interviews("specific term")` for targeted searches
 - Use `get_interview_turn("071:23")` for specific quotes
@@ -345,9 +480,9 @@ Step 5: search_interviews("especialista")
 → Look for specialist access issues
 Continue building evidence chains...
 
-🔄 PHASE 4: ITERATION (Refine based on findings)
-- Review your scratchpad with `scratchpad_read()`
-- Identify gaps or new directions
+🔄 PHASE 5: ITERATION (Refine based on findings)
+- {'QUICK: Skip iteration - go straight to synthesis' if max_iterations <= 5 else 'Review your scratchpad with `scratchpad_read()`'}
+- {'Monitor your remaining iterations carefully' if max_iterations <= 10 else 'Identify gaps or new directions'}
 - Make a new mini-plan and explore further
 - Connect findings across interviews
 
@@ -486,6 +621,72 @@ Research Question: "How do citizens view government response to their needs?"
 11. scratchpad_append("NEW DIRECTION: The 'only thing that works' comment suggests citizens might judge government by consistency, not just presence. Need to explore reliability/predictability of services. Adjusting plan to search for mentions of intermittent services or broken promises.")
 Continue iterating...
 
+EXAMPLES OF EXCELLENT RESEARCH PATTERNS:
+
+🌟 PATTERN 1: SYSTEMATIC BREADTH-FIRST EXPLORATION
+Good sequence for understanding scope before diving deep:
+
+1. list_interview_themes() → Get overview of all 121 themes
+2. scratchpad_append("INITIAL SCAN: Security themes appear in multiple forms - 'police_violence' (6 interviews), 'insecurity_and_drugs' (8 interviews), 'citizen_security_crisis' (12 interviews). Total ~20 interviews discuss security = 57% of corpus. This is clearly a major concern.")
+3. search_interviews("seguridad") → Cast wide net with general term
+4. scratchpad_append("BREADTH CHECK: 'seguridad' appears 56 times across 14 interviews. Geographic spread: 8 rural (064, 068, 070...) vs 6 urban (065, 071, 072...). Rural areas seem disproportionately concerned given they're only 18/35 interviews.")
+5. search_interviews("inseguridad") → Check negative framing
+6. search_interviews("violencia") → Related concept
+7. scratchpad_append("PATTERN EMERGING: Security discussed in 3 ways: 1) Traditional crime (robos, hurtos), 2) Drug-related violence (narco, pasta base), 3) State absence (no police presence). The drug angle appears newest - citizens say 'antes no había' (there wasn't before).")
+
+🌟 PATTERN 2: FOLLOWING UNEXPECTED THREADS
+Good example of pivoting based on discoveries:
+
+1. search_interviews("educación rural") → Starting with expected focus
+2. get_interview_turn("068:45-50") → Teacher mentions "exodus" of educators
+3. scratchpad_append("UNEXPECTED: Was looking for curriculum issues but teacher in 068:47 says 'no hay maestros que quieran venir' (no teachers want to come). This isn't about education quality but workforce crisis. Need to pivot.")
+4. search_interviews("maestros se van") → Following the new thread
+5. search_interviews("faltan docentes") → Different phrasing
+6. scratchpad_append("WORKFORCE CRISIS CONFIRMED: 5 different interviews mention teacher shortage. But here's what's interesting - it's not just quantity but experience: 068:89 mentions 'solo quedan los recién recibidos' (only newly graduated remain). Brain drain pattern?")
+7. spawn_sub_agent("Analyze the rural professional exodus pattern across sectors", "Found teacher shortage is part of broader pattern. Need to investigate if doctors, nurses, other professionals also leaving rural areas.")
+
+🌟 PATTERN 3: BUILDING EVIDENCE CHAINS
+Good example of systematic evidence accumulation:
+
+1. get_interview_turn("071:") → Start with interview summary
+2. scratchpad_append("Interview 071 overview: Rural perspective from Rivera, mentions health access issues. Key quote about 'specialist wait times.' This gives me specific search targets.")
+3. search_interviews("especialista") → Follow specific term from summary
+4. get_interview_turn("071:23") → Get exact quote about wait times
+5. get_interview_turn("084:47") → Cross-reference another mention
+6. get_interview_turn("089:12") → Third data point
+7. scratchpad_append("EVIDENCE CHAIN on specialist access: 071:23: '3 months for cardiologist' | 084:47: '6 months unless you pay' | 089:12: 'up to a year for neurologist.' Clear pattern of increasing waits, with paid option as escape valve. This two-tier system needs exploring.")
+8. search_interviews("pagar consulta") → Investigate private option
+
+🌟 PATTERN 4: COMPARATIVE ANALYSIS
+Good example of structured comparison:
+
+1. search_themes("youth") → Find all youth-related themes
+2. scratchpad_append("COMPARISON SETUP: Youth themes split between 'problems' (drug use, unemployment, crime) and 'abandonment' (no opportunities, must emigrate). Let me compare rural vs urban youth perspectives.")
+3. get_interview_turn("064:") → Rural youth perspective
+4. get_interview_turn("072:") → Urban youth perspective
+5. scratchpad_append("STARK CONTRAST: Rural youth (064) frame issue as 'no hay nada para hacer' (nothing to do) leading to drugs. Urban youth (072) talk about 'competencia' (competition) and 'stress.' Same generation, completely different challenges.")
+6. search_interviews("jóvenes futuro") → How do they see future?
+7. scratchpad_append("CONVERGENCE: Despite different challenges, both rural and urban youth share sense of 'no future here' - but rural kids emigrate to cities, urban kids talk about leaving country entirely. Nested emigration pattern!")
+
+🌟 PATTERN 5: TEMPORAL ANALYSIS
+Good example of tracking change over time:
+
+1. search_interviews("antes") → Looking for temporal comparisons
+2. scratchpad_append("TEMPORAL MARKERS: Citizens frequently use 'antes' (before) to mark changes. Collecting these to build timeline of perceived deterioration.")
+3. get_interview_turn("065:18") → "before there were no drugs here"
+4. get_interview_turn("070:34") → "before you could walk at night"
+5. get_interview_turn("068:89") → "before teachers stayed their whole career"
+6. scratchpad_append("TIMELINE EMERGING: Multiple citizens pinpoint changes to 'last 5-10 years' with special emphasis on 'último quinquenio' (last 5-year term). Drug arrival → violence increase → professional exodus → service collapse. It's a cascade, not isolated problems.")
+
+KEY PRINCIPLES IN THESE GOOD EXAMPLES:
+✓ Always explain WHY you're making each search
+✓ Use scratchpad to track patterns AS THEY EMERGE, not just at end
+✓ Let discoveries guide next steps (responsive, not rigid)
+✓ Build evidence through multiple sources
+✓ Look for connections between seemingly separate issues
+✓ Track not just what IS but what CHANGED
+✓ Use specific quotes and citations throughout
+
 TOOL SELECTION GUIDE:
 
 🗺️ For ORIENTATION:
@@ -535,16 +736,25 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                 api_params = {
                     "model": self.model,
                     "messages": final_messages,
-                    "temperature": 0.7,
-                    "max_tokens": 4096,
                     "tools": [tool["schema"] for tool in self.tools.values()]
                 }
                 
+                # Handle different parameters for different models
+                if self.model.startswith("o3") or self.model.startswith("o4"):
+                    # o-series models have specific requirements
+                    api_params["max_completion_tokens"] = 4096
+                    # o-series models only support default temperature (1.0)
+                    # Don't set temperature parameter, let it use default
+                else:
+                    # Traditional models use max_tokens and support custom temperature
+                    api_params["max_tokens"] = 4096
+                    api_params["temperature"] = 0.7
+                
                 # Debug: Log API call details
                 if self.research_mode and self.provider_config.name == "groq":
-                    self.logger.info(f"   🔍 API Call: iteration={iteration}, model={self.model}, provider={self.provider_config.name}")
-                    self.logger.info(f"   🔑 API Key: {self.client.api_key[:10]}...{self.client.api_key[-4:]}")
-                    self.logger.info(f"   📝 Messages: {len(final_messages)} messages, last role: {final_messages[-1]['role'] if final_messages else 'none'}")
+                    self.logger.info(f"🔍 API Call: iteration={iteration}, model={self.model}, provider={self.provider_config.name}")
+                    self.logger.info(f"🔑 API Key: {self.client.api_key[:10]}...{self.client.api_key[-4:]}")
+                    self.logger.info(f"📝 Messages: {len(final_messages)} messages, last role: {final_messages[-1]['role'] if final_messages else 'none'}")
                 
                 response = self.client.chat.completions.create(**api_params)
                 message = response.choices[0].message
@@ -563,7 +773,7 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                         
                         # Log cost in research mode
                         if self.research_mode and not self.is_sub_agent:
-                            self.logger.info(f"   💰 Iteration cost: ${iteration_cost:.6f} ({response.usage.total_tokens} tokens)")
+                            self.logger.info(f"💰 Iteration cost: ${iteration_cost:.6f} ({response.usage.total_tokens} tokens)")
                 
                 # Check if agent wants to use tools
                 if hasattr(message, 'tool_calls') and message.tool_calls:
@@ -604,19 +814,22 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                     
                     # Execute non-spawn tools sequentially first
                     for tool_call in other_calls:
-                        tool_name = tool_call.function.name
-                        tool_args_str = tool_call.function.arguments
-                        
-                        # Parse arguments
+                        # Ensure we always add a tool response, even on error
+                        result = None
                         try:
-                            tool_args = json.loads(tool_args_str) if tool_args_str else {}
-                        except json.JSONDecodeError:
-                            tool_args = {}
-                        
-                        self.logger.tool_call(tool_name, tool_args)
-                        
-                        # Emit tool_call event
-                        await self.emit_event("tool_call", {
+                            tool_name = tool_call.function.name
+                            tool_args_str = tool_call.function.arguments
+                            
+                            # Parse arguments
+                            try:
+                                tool_args = json.loads(tool_args_str) if tool_args_str else {}
+                            except json.JSONDecodeError:
+                                tool_args = {}
+                            
+                            self.logger.tool_call(tool_name, tool_args)
+                            
+                            # Emit tool_call event
+                            await self.emit_event("tool_call", {
                             "tool": tool_name,
                             "args": tool_args,
                             "id": tool_call.id
@@ -635,8 +848,7 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                                 result = await self.execute_cli_tool(tool_name, tool_config["command"], tool_args)
                                 
                                 # Special handling for scratchpad
-                                if tool_name == "scratchpad_append" and "note" in tool_args:
-                                    self.logger.scratchpad_entry(tool_args["note"])
+                                # (Removed redundant scratchpad logging - already shown in tool call)
                                 
                                 # In research mode, show extra detail for certain tools
                                 if self.research_mode and tool_name == "get_interview_turn":
@@ -645,7 +857,7 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                                         if parsed.get("type") == "interview_summary":
                                             summary = parsed.get("summary", {}).get("overview", "")
                                             if summary:
-                                                self.logger.info(f"   📋 Summary excerpt: {summary[:200]}...")
+                                                self.logger.info(f"📋 Summary excerpt: {summary[:200]}...")
                                     except:
                                         pass
                             else:
@@ -655,29 +867,65 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                         
                         # Extract preview for certain tools
                         preview = None
-                        if tool_name in ["search_interviews", "search_themes", "list_interview_themes"]:
+                        if tool_name in ["search_interviews", "search_themes", "list_interview_themes", "get_interview_turn"]:
                             # Try to extract meaningful content from JSON results
                             try:
                                 parsed = json.loads(result)
                                 
                                 if tool_name == "search_interviews" and "results" in parsed:
-                                    # For search results, show first few matches
-                                    results = parsed["results"][:3]  # First 3 results
-                                    previews = []
+                                    # Count different types of matches
+                                    results = parsed["results"]
+                                    theme_matches = sum(1 for r in results if r.get("type") == "theme_match")
+                                    tag_matches = sum(1 for r in results if r.get("type") == "tag_match")
+                                    text_matches = sum(1 for r in results if r.get("type") == "turn_text_match")
+                                    
+                                    # Get unique interviews
+                                    interviews = set()
                                     for r in results:
                                         if r.get("type") == "theme_match":
-                                            previews.append(f"Theme: {r.get('theme', '')}")
-                                        elif r.get("type") == "turn_text_match":
-                                            text = r.get("text", "")[:100]
-                                            previews.append(f"Text: {text}")
-                                        elif r.get("type") == "tag_match":
-                                            previews.append(f"Tag: {r.get('tag', '')}")
-                                    preview = " | ".join(previews)
+                                            interviews.update(r.get("interviews", []))
+                                        elif r.get("interview_id"):
+                                            interviews.add(r["interview_id"])
+                                    
+                                    # Build informative summary
+                                    parts = []
+                                    if theme_matches: 
+                                        parts.append(f"{theme_matches} themes")
+                                    if tag_matches: 
+                                        parts.append(f"{tag_matches} tags")
+                                    if text_matches: 
+                                        parts.append(f"{text_matches} text matches")
+                                    
+                                    summary = f"Found: {', '.join(parts)}"
+                                    if interviews:
+                                        summary += f" across {len(interviews)} interviews"
+                                    
+                                    # Add sample themes if available
+                                    theme_names = []
+                                    for r in results[:3]:  # First 3 results
+                                        if r.get("type") == "theme_match":
+                                            theme_names.append(r.get("theme", ""))
+                                    if theme_names:
+                                        summary += f" | Themes: {', '.join(theme_names[:2])}"
+                                    
+                                    preview = summary
                                 
-                                elif tool_name == "list_interview_themes" and "themes" in parsed:
-                                    # Show a few theme names
-                                    themes = list(parsed["themes"].keys())[:4]
-                                    preview = f"Themes: {', '.join(themes)}"
+                                elif tool_name == "list_interview_themes":
+                                    # Handle both regular and summary mode output
+                                    if "meta_themes" in parsed:
+                                        # Summary mode - extract themes from meta_themes hierarchy
+                                        all_themes = []
+                                        for meta_theme, meta_data in parsed["meta_themes"].items():
+                                            if meta_theme != "uncategorized" and "themes" in meta_data:
+                                                all_themes.extend(list(meta_data["themes"].keys()))
+                                        # Show top themes, excluding any from uncategorized
+                                        preview = f"Top themes: {', '.join(all_themes[:5])}" if all_themes else "No themes found"
+                                    elif "themes" in parsed:
+                                        # Regular mode
+                                        themes = list(parsed["themes"].keys())[:4]
+                                        preview = f"Themes: {', '.join(themes)}"
+                                    else:
+                                        preview = "Theme data structure not recognized"
                                 
                                 elif tool_name == "search_themes":
                                     # Show matching theme names
@@ -685,24 +933,93 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                                         themes = list(parsed["matching_themes"].keys())[:3]
                                         preview = f"Found themes: {', '.join(themes)}"
                                 
-                            except (json.JSONDecodeError, KeyError):
-                                # Fallback to simple line extraction
-                                lines = result.strip().split('\n')
-                                for line in lines:
-                                    if line.strip() and not line.startswith('Found') and not line.startswith('Searching'):
-                                        preview = line.strip()
-                                        break
+                                elif tool_name == "get_interview_turn":
+                                    # Generate informative preview for interview data
+                                    if parsed.get("type") == "interview_summary":
+                                        # Interview summary
+                                        interview_id = parsed.get("interview_id", "")
+                                        meta = parsed.get("metadata", {})
+                                        themes = parsed.get("key_themes", [])[:3]
+                                        
+                                        parts = [f"Interview {interview_id} summary"]
+                                        if meta.get("location"):
+                                            parts.append(f"{meta['location']}")
+                                        if themes:
+                                            parts.append(f"themes: {', '.join(themes)}")
+                                        preview = " | ".join(parts)
+                                    
+                                    elif parsed.get("turns"):
+                                        # Turn or turn range
+                                        turns = parsed.get("turns", [])
+                                        turn_count = len(turns)
+                                        if turn_count == 1:
+                                            # Single turn - show speaker and preview
+                                            turn = turns[0]
+                                            speaker = turn.get("speaker", "")
+                                            text = turn.get("text", "")[:100] + "..."
+                                            preview = f"{speaker}: {text}"
+                                        else:
+                                            # Multiple turns - show count and speakers
+                                            speakers = list(set(t.get("speaker", "") for t in turns))
+                                            preview = f"{turn_count} turns | Speakers: {', '.join(speakers[:3])}"
+                                
+                            except (json.JSONDecodeError, KeyError) as e:
+                                # Fallback for non-JSON results
+                                if tool_name == "search_interviews":
+                                    # Count matches in raw text output
+                                    lines = result.strip().split('\n')
+                                    text_matches = sum(1 for line in lines if line.startswith("MATCH:"))
+                                    theme_matches = sum(1 for line in lines if line.startswith("THEME MATCH:"))
+                                    tag_matches = sum(1 for line in lines if line.startswith("TAG MATCH:"))
+                                    
+                                    # Count unique interviews
+                                    interviews = set()
+                                    for line in lines:
+                                        if "Interview " in line and ":" in line:
+                                            # Extract interview ID from lines like "Interview 065:"
+                                            parts = line.split("Interview ")
+                                            if len(parts) > 1:
+                                                interview_id = parts[1].split(":")[0].strip()
+                                                if interview_id.isdigit():
+                                                    interviews.add(interview_id)
+                                    
+                                    parts = []
+                                    if theme_matches: parts.append(f"{theme_matches} themes")
+                                    if tag_matches: parts.append(f"{tag_matches} tags")
+                                    if text_matches: parts.append(f"{text_matches} text matches")
+                                    
+                                    if parts:
+                                        preview = f"Found: {', '.join(parts)}"
+                                        if interviews:
+                                            preview += f" across {len(interviews)} interviews"
+                                    else:
+                                        # Try to find any result summary line
+                                        for line in lines:
+                                            if line.strip() and "Found" in line:
+                                                preview = line.strip()
+                                                break
+                                else:
+                                    # Original fallback for other tools
+                                    lines = result.strip().split('\n')
+                                    for line in lines:
+                                        if line.strip():
+                                            preview = line.strip()
+                                            break
                         
-                        self.logger.tool_result(len(result), preview)
+                        self.logger.tool_result(len(result), preview, tool_name, result)
                         
-                        # Emit tool_result event
+                        # Emit tool_result event with full data
                         await self.emit_event("tool_result", {
                             "tool": tool_name,
+                            "result": result,  # Include full result
                             "metadata": {
                                 "size": len(result),
-                                "preview": preview or result[:200] + "..." if len(result) > 200 else result
+                                "preview": self._generate_preview(tool_name, result)
                             }
                         }, iteration + 1)
+                        
+                        # Yield to ensure event is sent immediately
+                        await asyncio.sleep(0)
                         
                         # Add tool result to conversation
                         final_messages.append({
@@ -721,6 +1038,27 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                         })
                         
                         self.stats['tool_calls'] += 1
+                        
+                        except Exception as e:
+                            # If anything goes wrong, ensure we still add a tool response
+                            error_msg = f"Error executing tool {tool_name}: {str(e)}"
+                            self.logger.error(error_msg)
+                            
+                            # Add error response to conversation
+                            final_messages.append({
+                                "role": "tool",
+                                "tool_call_id": tool_call.id,
+                                "content": json.dumps({"error": error_msg})
+                            })
+                            
+                            # Log the failed tool call
+                            tool_call_log.append({
+                                "tool": tool_name,
+                                "args": tool_args if 'tool_args' in locals() else {},
+                                "result": error_msg,
+                                "result_length": len(error_msg),
+                                "timestamp": datetime.now().isoformat()
+                            })
                     
                     # Execute spawn_sub_agent calls in parallel
                     if spawn_calls:
@@ -730,7 +1068,7 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                             try:
                                 args = json.loads(tool_call.function.arguments)
                                 question = args.get('question', 'Unknown')
-                                self.logger.info(f"   {i}. {question[:100]}...")
+                                self.logger.info(f"{i}. {question[:100]}...")
                             except:
                                 pass
                         
@@ -814,30 +1152,31 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                                         action_summary = parsed_result.get('action_summary', 'conducted research')
                                         
                                         preview = f"✓ {iterations} iterations, {tool_calls} tool calls"
-                                        self.logger.info(f"   🔍 Sub-agent {action_summary}")
-                                        self.logger.info(f"   📊 Key finding: {summary[:150]}...")
+                                        self.logger.info(f"🔍 Sub-agent {action_summary}")
+                                        self.logger.info(f"📊 Key finding: {summary[:150]}...")
                                         
                                         # Show tool usage breakdown if available
                                         if 'tool_summary' in parsed_result:
                                             tools_used = ', '.join([f"{t}({c})" for t, c in parsed_result['tool_summary'].items()])
-                                            self.logger.info(f"   🔧 Tools used: {tools_used}")
+                                            self.logger.info(f"🔧 Tools used: {tools_used}")
                                         
                                         # Aggregate sub-agent costs
                                         if 'stats' in parsed_result and 'total_cost' in parsed_result['stats']:
                                             sub_cost = parsed_result['stats']['total_cost']
                                             self.stats['total_cost'] += sub_cost
                                             if sub_cost > 0:
-                                                self.logger.info(f"   💰 Sub-agent cost: ${sub_cost:.6f}")
+                                                self.logger.info(f"💰 Sub-agent cost: ${sub_cost:.6f}")
                                     else:
                                         preview = "Sub-agent completed"
                                 except json.JSONDecodeError:
                                     preview = "Sub-agent completed (non-JSON response)"
                                 
-                                self.logger.tool_result(len(result), preview)
+                                self.logger.tool_result(len(result), preview, tool_name, result)
                                 
-                                # Emit tool_result event
+                                # Emit tool_result event with full data
                                 await self.emit_event("tool_result", {
                                     "tool": "spawn_sub_agent",
+                                    "result": result,  # Include full result
                                     "metadata": {
                                         "size": len(result),
                                         "preview": preview
@@ -881,90 +1220,251 @@ Remember: Quality over quantity. It's better to deeply explore 5-6 relevant inte
                     break
                     
             except Exception as e:
-                self.logger.error(f"Error in iteration {iteration + 1}: {str(e)}")
-                break
+                error_msg = str(e)
+                self.logger.error(f"Error in iteration {iteration + 1}: {error_msg}")
+                
+                # Check if it's a retryable error (rate limiting, server overload)
+                is_retryable = any(phrase in error_msg.lower() for phrase in [
+                    "over capacity", "rate limit", "server error", "503", "502", "500"
+                ])
+                
+                if is_retryable and iteration < max_iterations - 2:  # Leave room for retries
+                    import time
+                    retry_delay = min(2 ** (iteration % 3), 30)  # Exponential backoff, max 30s
+                    self.logger.info(f"⏳ Retryable error detected. Waiting {retry_delay}s before retry...")
+                    time.sleep(retry_delay)
+                    continue  # Retry this iteration
+                else:
+                    # Non-retryable error or too many iterations used - break
+                    self.logger.error(f"❌ Stopping research due to: {error_msg}")
+                    break
         
-        # Generate summary if needed
-        if tool_call_log and (not final_response or final_response == "Research incomplete - reached maximum iterations or encountered error"):
+        # Yield to ensure last tool result is sent
+        await asyncio.sleep(0)
+        
+        # Emit research phase complete event
+        await self.emit_event("research_complete", {
+            "iterations": iteration,
+            "tool_calls": len(tool_call_log)
+        })
+        
+        # Yield to ensure event is sent immediately
+        await asyncio.sleep(0)
+        
+        # Read scratchpad content (always needed for report generation)
+        try:
+            from src.tools.scratchpad_tools import read_notes
+            scratchpad_content = read_notes(self.session_id)
+        except Exception as e:
+            self.logger.error(f"Error reading scratchpad: {e}")
+            scratchpad_content = ""
+        
+        # Generate summary only if we have meaningful research data
+        min_tool_calls = 3  # Lowered threshold to ensure UN-style reports are generated
+        has_sufficient_data = len(tool_call_log) >= min_tool_calls
+        
+        if tool_call_log and has_sufficient_data and (not final_response or final_response == "Research incomplete - reached maximum iterations or encountered error"):
             self.logger.progress(f"Generating comprehensive summary from {len(tool_call_log)} research actions...")
             
+            # Emit summary generation event to show progress
+            await self.emit_event("summary_generation_start", {
+                "tool_calls": len(tool_call_log),
+                "iterations": iteration
+            })
+        elif tool_call_log and not has_sufficient_data:
+            self.logger.error(f"Insufficient research data: only {len(tool_call_log)} tool calls (minimum {min_tool_calls} required)")
+            final_response = f"Research incomplete: Only {len(tool_call_log)} tool calls completed (minimum {min_tool_calls} required for meaningful analysis). Please retry or check API availability."
+        
+        if tool_call_log and has_sufficient_data and (not final_response or final_response == "Research incomplete - reached maximum iterations or encountered error"):
+            # Yield to ensure event is sent immediately
+            await asyncio.sleep(0)
+            
             try:
-                # Read the scratchpad contents
-                from src.tools.scratchpad_tools import read_notes
-                scratchpad_content = read_notes(self.session_id)
+                
+                # Build tool call summary
+                tool_call_summary = []
+                for tc in tool_call_log:
+                    args_str = json.dumps(tc['args'], ensure_ascii=False)
+                    if len(args_str) > 100:
+                        tool_call_summary.append(f"- {tc['tool']}({args_str[:100]}...)")
+                    else:
+                        tool_call_summary.append(f"- {tc['tool']}({args_str})")
+                tool_calls_text = '\n'.join(tool_call_summary)
                 
                 summary_prompt = f"""
 You have explored the research question through {len(tool_call_log)} tool calls across {iteration} iterations. 
 
+IMPORTANT INSTRUCTIONS:
+1. You MUST use the UN-style report format shown below
+2. DO NOT use any other format (e.g., "STRUCTURED FINDINGS", simple lists, or custom formats)
+3. Follow the section structure EXACTLY as provided
+4. Include extensive citations as specified
+
 YOUR RESEARCH JOURNEY (from scratchpad):
 {scratchpad_content}
 
+TOOLS USED:
+You made {len(tool_call_log)} tool calls during your research:
+{tool_calls_text}
+
 Review your thinking process above. Notice how your understanding evolved, what questions emerged, and what patterns became clear.
 
-Now synthesize your exploration into a research summary that balances structured data for parsing with narrative interpretation. Let your evolving insights inform the narrative.
+Now synthesize your exploration into a comprehensive research report following UN documentation standards.
 
-# STRUCTURED FINDINGS
+# CITATION STYLE GUIDE
+**CRITICAL**: Every claim must be supported by citations. Use these EXACT formats for easy hyperlinking:
 
-## Key_Findings
-[List 3-5 major findings with citations]
+**Citation Formats** (USE EXACTLY THESE PATTERNS):
+- Single turn citation: [[064:23]]
+- Multiple citations: [[064:23]] [[071:45]] [[089:12]]
+- Interview summary: [[068:summary]]
+- Quote with citation: "Direct quote from interview" [[071:23]]
+- Paraphrased claim: Citizens report long wait times [[071:23]] [[084:47]] [[089:12]]
 
-Finding_1:
-- Statement: [Clear claim]
-- Evidence: [Supporting evidence with citations like `071:23`, `084:145`]
-- Significance: [Why this matters]
+**Important Format Rules**:
+- Always use double square brackets: [[interview:turn]] or [[interview:summary]]
+- Interview IDs are always 3 digits (pad with zeros: 064, not 64)
+- Turn numbers don't need padding
+- For multiple citations, separate with spaces, NOT semicolons
+- Place citations immediately after the relevant claim or quote
 
-Finding_2:
-- Statement: [Clear claim]  
-- Evidence: [Supporting evidence with citations]
-- Significance: [Why this matters]
+**Citation Requirements**:
+- NEVER make claims without citations
+- Cite liberally - multiple citations strengthen claims
+- When describing patterns, cite 3-5 examples minimum: [[064:12]] [[068:45]] [[071:23]]
+- For statistics (e.g., "15 interviews"), list specific interviews: [[064:summary]] [[068:summary]] [[071:summary]]
+- For direct quotes, always use exact text with quotation marks
 
-## Themes_Identified
-[Major themes with example quotes]
+**Examples of Properly Formatted Citations**:
+- "We need better healthcare in rural areas" [[071:45]]
+- Multiple citizens expressed frustration with wait times [[064:23]] [[071:45]] [[089:12]]
+- This theme appeared across 5 interviews [[064:summary]] [[068:summary]] [[071:summary]] [[076:summary]] [[089:summary]]
+- As one farmer explained: "The credit system is broken" [[086:22]]
 
-Theme_1: [Theme name]
-- Description: [What this theme encompasses]
-- Example: "Direct quote from interview" (`071:23`)
-- Frequency: [How often it appeared]
+REQUIRED OUTPUT FORMAT (USE EXACTLY THIS STRUCTURE):
 
-## Citation_Index
-[Group citations by topic for easy reference]
-- Healthcare access: `071:23`, `072:45`, `084:12`
-- Rural challenges: `069:34`, `078:56`, `091:78`
-- [Continue grouping]
+# RESEARCH REPORT
 
-# INTERPRETIVE ANALYSIS
+## EXECUTIVE SUMMARY
 
-## Narrative Summary
-[2-3 paragraphs of free-form analysis with embedded citations. For example: "The recurring frustration with healthcare waiting times (`071:23`, `084:145`) connects to broader themes of rural isolation (`069:34`). Citizens repeatedly express..." Use citations naturally throughout your narrative to ground every interpretive claim in specific evidence.
+[Provide a 3-4 paragraph executive summary that captures the essence of citizen perspectives on this topic. Include:]
+- Overall prevalence and significance of the topic (with corpus-wide statistics)
+- Main themes that emerged from citizen testimonies (with citation counts)
+- Key patterns and geographic/demographic variations (with examples)
+- Critical insights for policy consideration (grounded in evidence)
 
-BAD: "Many citizens are concerned about security" 
-GOOD: "Citizens across multiple interviews express security concerns (`071:12`, `072:34`, `073:45`, `078:23`)"
+Each paragraph should have 3-5 citations minimum using [[interview:turn]] format. End with a one-sentence takeaway.
 
-BAD: "Rural communities face unique challenges"
-GOOD: "Rural communities face unique challenges including transport barriers (`069:34`, `078:56`), healthcare access (`071:23`, `084:145`), and limited educational resources (`072:91`, `091:45`)"]
+## 1. INTRODUCTION AND METHODOLOGY
 
-## Patterns and Connections
-[Discuss relationships between findings with citations. For instance: "The teacher's observation about student hunger (`072:89`) directly relates to parent concerns about economic pressure (`073:45`). This pattern appears across multiple interviews (`069:12`, `078:34`, `091:56`)..." Every connection should reference specific turns.
+### 1.1 Research Context
+[Brief context about the consultation process and this specific research question - 1 paragraph]
 
-BAD: "There seems to be a connection between poverty and education"
-GOOD: "The connection between economic hardship and educational challenges appears in teacher testimonies about hungry students (`072:89`), parent concerns about school supplies (`073:45`, `084:67`), and administrator budget discussions (`091:23`)"]
+### 1.2 Data Overview
+[Detailed statistics about topic coverage across the corpus:]
+- Total coverage: X of 35 interviews (Y%) discussed [topic] (list all: 064, 068, 071...)
+- Geographic distribution: Rural (X interviews), Urban (Y interviews), Mixed (Z interviews)
+- Intensity analysis: Total turns (X), Average per interview (Y), Range (min-max)
+- Primary vs secondary concern: Primary in X interviews (list), Secondary in Y interviews (list)
 
-## Research Reflection
-[Brief reflection on the research process, including what search strategies revealed surprising connections. Even methodological observations should reference examples: "Searching for 'transport' unexpectedly revealed healthcare access issues (`071:45`, `084:23`)..."]
+### 1.3 Analytical Approach
+[Brief note on search terms used and how breadth was assessed - 1 paragraph]
 
-# TECHNICAL NOTES
+## 2. THEMATIC ANALYSIS
 
-Coverage:
-- Interviews analyzed: [number/list]
-- Search queries used: [list key searches]
-- Limitations: [what wasn't fully explored]
+[For each major theme discovered, create a detailed section:]
 
-CITATION REQUIREMENTS:
-- Format: `INTERVIEW:TURN` (e.g., `071:23`) for specific quotes
-- Format: `INTERVIEW:` (e.g., `071:`) to reference entire conversations
-- EVERY SINGLE CLAIM must have citations - no exceptions
-- Use citations in EVERY section, including interpretive analysis
-- Embed citations naturally in narrative text"""
+### 2.1 [Theme Name]
+**Prevalence**: Found in X interviews (list all interview numbers)
+**Geographic concentration**: Primarily [rural/urban/mixed] (specify locations)
+**Key voices**: [Who raises this theme - teachers, elderly, officials, etc.]
+
+#### 2.1.1 Overview
+[1-2 paragraphs describing the theme with extensive citations]
+
+#### 2.1.2 Evidence and Testimonies
+[3-4 direct quotes or paraphrased testimonies, each with context]
+- "Direct quote showing citizen perspective" (071:23) - [Rural teacher, Los Arrayanes]
+- Citizens in Fray Bentos report that [paraphrased concern] (065:45; 065:47; 065:52)
+- Multiple interviews highlight [pattern] (068:12; 071:34; 084:67; 089:23; 091:45)
+
+#### 2.1.3 Sub-themes and Variations
+[Identify 2-3 sub-themes with citations]
+- Sub-theme 1: [Description] (064:23; 068:45; 071:12)
+- Sub-theme 2: [Description] (076:34; 078:56; 080:78)
+
+#### 2.1.4 Policy Implications
+[1 paragraph on what this theme suggests for policy, grounded in citizen suggestions]
+
+### 2.2 [Second Major Theme]
+[Repeat structure above]
+
+### 2.3 [Third Major Theme]
+[Repeat structure above]
+
+[Continue for all major themes identified - typically 3-5 themes]
+
+## 3. CROSS-CUTTING PATTERNS AND INTERCONNECTIONS
+
+### 3.1 Geographic Variations
+[Analyze how the topic differs between rural/urban/regional contexts with specific examples and citations]
+
+### 3.2 Demographic Patterns
+[Examine which groups (elderly, youth, professionals, etc.) emphasize which aspects]
+
+### 3.3 Interconnected Issues
+[Show how this topic connects to other major concerns, with citation networks]
+- [Topic] consistently appears alongside [other topic] (064:23; 068:45; 071:67; 076:89)
+- Citizens explicitly link [topic A] to [topic B] through [mechanism] (089:12; 091:34)
+
+### 3.4 Temporal and Contextual Factors
+[Any patterns in how/when topics emerge in conversations]
+
+## 4. CITIZEN PROPOSALS AND SOLUTIONS
+
+[Organize citizen suggestions thematically with extensive citations]
+
+### 4.1 Immediate Measures
+- [Specific proposal]: Suggested by [groups] (064:23; 068:45; 071:12)
+- [Another proposal]: Widespread support across regions (076:34; 078:56; 080:78; 082:90)
+
+### 4.2 Structural Reforms
+- [Long-term proposal]: Advocated particularly in rural areas (068:23; 071:45; 089:67)
+- [Systemic change]: Linked to broader governance issues (064:12; 065:34; 066:56)
+
+### 4.3 Community-Level Initiatives
+[Local solutions proposed by citizens]
+
+## 5. CONCLUSION
+
+### 5.1 Summary of Findings
+[Synthesize the main insights, referencing the major themes]
+
+### 5.2 Policy Recommendations
+[Based strictly on citizen input, what actions emerge as priorities?]
+
+### 5.3 Areas for Further Investigation
+[What questions remain or emerge from this analysis?]
+
+### 5.4 Final Reflection
+[One paragraph reflecting on what this reveals about citizen priorities and democratic participation]
+
+---
+
+## TECHNICAL ANNEX
+
+### A.1 Interview Coverage
+- Interviews analyzed: [List all 35 with notation of which discussed the topic]
+- Search queries used: [List all search terms]
+- Tool calls made: [Number and type]
+
+### A.2 Citation Index
+[Organize all citations by theme for easy reference]
+- [Theme 1]: 064:23, 068:45, 071:12, 076:34...
+- [Theme 2]: 065:12, 067:34, 069:56, 072:78...
+
+### A.3 Limitations and Considerations
+[Any limitations in the analysis]"""
                 
                 final_messages.append({
                     "role": "user",
@@ -972,12 +1472,20 @@ CITATION REQUIREMENTS:
                 })
                 
                 # Get final summary
-                summary_response = self.client.chat.completions.create(
-                    model=self.model,
-                    messages=final_messages,
-                    temperature=0.7,
-                    max_tokens=4096
-                )
+                summary_params = {
+                    "model": self.model,
+                    "messages": final_messages
+                }
+                
+                # Handle different parameters for different models
+                if self.model.startswith("o3") or self.model.startswith("o4"):
+                    summary_params["max_completion_tokens"] = 4096
+                    # o-series models only support default temperature
+                else:
+                    summary_params["max_tokens"] = 4096
+                    summary_params["temperature"] = 0.7
+                    
+                summary_response = self.client.chat.completions.create(**summary_params)
                 
                 # Track summary generation costs
                 if hasattr(summary_response, 'usage'):
@@ -992,16 +1500,48 @@ CITATION REQUIREMENTS:
                 
                 final_response = summary_response.choices[0].message.content
                 
+                # Emit summary generation complete event
+                await self.emit_event("summary_generation_end", {
+                    "summary_length": len(final_response)
+                })
+                
+                # Yield to ensure event is sent immediately
+                await asyncio.sleep(0)
+                
             except Exception as e:
                 self.logger.error(f"Error generating summary: {str(e)}")
                 final_response = f"Error generating summary: {str(e)}"
+                
+                # Emit error event
+                await self.emit_event("summary_generation_end", {
+                    "error": str(e)
+                })
+                
+                # Yield to ensure event is sent immediately
+                await asyncio.sleep(0)
         
-        # Emit final response events
-        await self.emit_event("response_start", {})
-        await self.emit_event("response_end", {
-            "response": final_response,
-            "sources": self._extract_sources(final_response)
-        })
+        # Report generation phase
+        if tool_call_log:
+            # Emit report generation started event
+            await self.emit_event("report_generation_start", {
+                "method": "summary"
+            })
+            
+            # Yield to ensure event is sent immediately
+            await asyncio.sleep(0)
+            
+            # Use the summary already generated
+            await self.emit_event("report_generation_end", {
+                "response": final_response,
+                "sources": self._extract_sources(final_response)
+            })
+        else:
+            # No research was done, just return the direct response
+            await self.emit_event("report_generation_start", {"method": "direct"})
+            await self.emit_event("report_generation_end", {
+                "response": final_response,
+                "sources": self._extract_sources(final_response)
+            })
         
         # Emit stats
         duration = (datetime.now() - self.stats['start_time']).total_seconds()
@@ -1020,26 +1560,26 @@ CITATION REQUIREMENTS:
             duration = datetime.now() - self.stats['start_time']
             self.logger.info(f"\n{'='*60}")
             self.logger.info(f"📊 Research Statistics:")
-            self.logger.info(f"   • Duration: {duration.seconds}s")
-            self.logger.info(f"   • Iterations: {self.stats['iterations']}")
-            self.logger.info(f"   • Tool calls: {self.stats['tool_calls']}")
+            self.logger.info(f"• Duration: {duration.seconds}s")
+            self.logger.info(f"• Iterations: {self.stats['iterations']}")
+            self.logger.info(f"• Tool calls: {self.stats['tool_calls']}")
             
             # Show token usage and costs
             if self.stats['input_tokens'] > 0:
                 total_tokens = self.stats['input_tokens'] + self.stats['output_tokens']
-                self.logger.info(f"   • Tokens: {total_tokens:,} (in: {self.stats['input_tokens']:,}, out: {self.stats['output_tokens']:,})")
+                self.logger.info(f"• Tokens: {total_tokens:,} (in: {self.stats['input_tokens']:,}, out: {self.stats['output_tokens']:,})")
                 
                 # Show cost if applicable
                 if self.stats['total_cost'] > 0:
-                    self.logger.info(f"   • Cost: ${self.stats['total_cost']:.4f} ({self.provider_config.name})")
+                    self.logger.info(f"• Cost: ${self.stats['total_cost']:.4f} ({self.provider_config.name})")
                 else:
-                    self.logger.info(f"   • Cost: Free ({self.provider_config.name})")
+                    self.logger.info(f"• Cost: Free ({self.provider_config.name})")
             
             # Show sub-agent spawns if any
             if self.stats['sub_agents_spawned'] > 0:
-                self.logger.info(f"   • Sub-agents: {self.stats['sub_agents_spawned']}")
+                self.logger.info(f"• Sub-agents: {self.stats['sub_agents_spawned']}")
                 
-            self.logger.info(f"   • Session ID: {self.session_id}")
+            self.logger.info(f"• Session ID: {self.session_id}")
             self.logger.info(f"{'='*60}\n")
         
         # Prepare stats for JSON serialization
@@ -1059,6 +1599,7 @@ CITATION REQUIREMENTS:
         # Return results
         return {
             "final_response": final_response,
+            "final_report": getattr(self, 'final_report', final_response),  # Include the report if generated
             "tool_calls": tool_call_log,
             "iterations": iteration,
             "session_id": self.session_id,
@@ -1093,9 +1634,9 @@ CITATION REQUIREMENTS:
             
             self.stats['sub_agents_spawned'] += 1
             self.logger.info(f"🚀 Delegating to sub-agent (depth {self.depth + 1}):")
-            self.logger.info(f"   📝 Question: {question[:150]}...")
-            self.logger.info(f"   🎯 Context: {context[:100]}..." if context else "   🎯 No context provided")
-            self.logger.info(f"   ⚙️  Max iterations: {max_iterations}")
+            self.logger.info(f"📝 Question: {question[:150]}...")
+            self.logger.info(f"🎯 Context: {context[:100]}..." if context else "🎯 No context provided")
+            self.logger.info(f"⚙️  Max iterations: {max_iterations}")
             
             full_command = command
             
@@ -1171,6 +1712,9 @@ CITATION REQUIREMENTS:
             })
         except Exception as e:
             return f"Failed to execute command: {str(e)}"
+    
+    # Streaming methods removed for simplicity
+    # The agent now uses the summary generation approach exclusively
 
 async def main():
     """Main entry point for the research agent"""
@@ -1220,6 +1764,18 @@ async def main():
         sys.argv.remove("--research")
         if not is_sub_agent:
             print("🔬 Research mode enabled: Extra detailed logging + complete scratchpad display")
+    
+    # Parse max iterations
+    max_iter = 30  # Default
+    for i, arg in enumerate(sys.argv):
+        if arg == "--max-iterations" and i + 1 < len(sys.argv):
+            try:
+                max_iter = int(sys.argv[i + 1])
+                sys.argv.pop(i)
+                sys.argv.pop(i)
+                break
+            except (ValueError, IndexError):
+                pass
     depth = 0
     max_depth = 3
     parent_session_id = None
@@ -1280,7 +1836,9 @@ async def main():
     
     try:
         # Run research with appropriate iteration limit
-        max_iter = 10 if is_sub_agent else 30
+        # Sub-agents use 10 iterations unless overridden
+        if is_sub_agent and max_iter == 30:  # Default wasn't changed
+            max_iter = 10
         results = await agent.autonomous_research(research_question, max_iterations=max_iter)
         
         # Sub-agents output JSON to stdout and exit
@@ -1388,11 +1946,7 @@ async def main():
             except Exception as e:
                 print(f"⚠️  Could not read scratchpad: {e}")
         
-        # Print summary
-        print("\n" + "="*60)
-        print("📊 RESEARCH SUMMARY")
-        print("="*60)
-        print(results['final_response'])
+        # Summary already printed via streaming, no need to print again
         
     except KeyboardInterrupt:
         print("\n\n⚠️  Research interrupted by user")

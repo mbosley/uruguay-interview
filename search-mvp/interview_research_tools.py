@@ -47,25 +47,6 @@ INTERVIEW_RESEARCH_TOOLS = {
         }
     },
     
-    "list_interview_themes": {
-        "command": "python src/cli/enriched_cli.py themes --summary",
-        "schema": {
-            "type": "function", 
-            "function": {
-                "name": "list_interview_themes",
-                "description": "Get complete list of all 121 themes across the corpus with occurrence counts. ALWAYS USE THIS EARLY to understand what citizens discuss. Reveals crisis patterns, priority themes, and unexpected topics. Essential for research planning.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "interview_id": {
-                            "type": "string",
-                            "description": "Optional: limit to specific interview (e.g. '072')"
-                        }
-                    }
-                }
-            }
-        }
-    },
     
     "get_corpus_stats": {
         "command": "python src/cli/enriched_cli.py stats",
@@ -73,7 +54,7 @@ INTERVIEW_RESEARCH_TOOLS = {
             "type": "function",
             "function": {
                 "name": "get_corpus_stats", 
-                "description": "Get corpus overview: 35 interviews, 5510 turns, 121 themes. Quick orientation to understand scope. Always start here.",
+                "description": "Get corpus overview with meta-theme categories. Shows: 35 interviews, 5510 turns, 121 themes organized into 17 meta-themes like 'Educational System Breakdown', 'Employment Crisis', etc. ALWAYS START HERE to see the thematic landscape.",
                 "parameters": {
                     "type": "object",
                     "properties": {}
@@ -119,22 +100,22 @@ INTERVIEW_RESEARCH_TOOLS = {
         }
     },
     
-    "search_themes": {
-        "command": "python src/cli/enriched_cli.py themes --summary --filter {keyword}",
+    "explore_meta_theme": {
+        "command": "python src/cli/enriched_cli.py themes --summary --meta-theme {meta_theme}",
         "schema": {
             "type": "function",
             "function": {
-                "name": "search_themes", 
-                "description": "Search for themes containing specific keywords. Returns matching themes with their prevalence.",
+                "name": "explore_meta_theme", 
+                "description": "Deep dive into a specific meta-theme category. Shows all themes within that category with turn counts and interview locations. IMPORTANT: Use the exact key from corpus stats (with underscores), not the display name. Examples: 'security_and_drugs' (NOT 'Security Crisis and Drug Proliferation'), 'education_system_failure', 'healthcare_access', 'employment_crisis'.",
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "keyword": {
+                        "meta_theme": {
                             "type": "string",
-                            "description": "Keyword to search for in theme names (e.g. 'education', 'health', 'rural')"
+                            "description": "Meta-theme key from corpus stats. Use underscores, not spaces. Examples: security_and_drugs, education_system_failure, healthcare_access, employment_crisis, rural_urban_disparity"
                         }
                     },
-                    "required": ["keyword"]
+                    "required": ["meta_theme"]
                 }
             }
         }
