@@ -6,6 +6,10 @@ Supports multiple providers with consistent interface
 import os
 from dataclasses import dataclass
 from typing import Optional
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 @dataclass
 class ProviderConfig:
@@ -41,6 +45,16 @@ PROVIDERS = {
         cost_per_1k_input=0.001,  # $1 per million = $0.001 per 1k tokens
         cost_per_1k_output=0.003  # $3 per million = $0.003 per 1k tokens
     ),
+    "openai": ProviderConfig(
+        name="openai",
+        base_url="https://api.openai.com/v1",
+        api_key_env="OPENAI_API_KEY",
+        model_name="o4-mini",
+        description="OpenAI o4-mini (cost-efficient reasoning)",
+        tokens_per_second=60,
+        cost_per_1k_input=0.00015,  # Assuming similar pricing to gpt-4o-mini
+        cost_per_1k_output=0.0006   # Assuming similar pricing to gpt-4o-mini
+    ),
     # Easy to add more providers
     # "together": ProviderConfig(
     #     name="together",
@@ -74,6 +88,10 @@ def get_provider_config(provider_name: str = None) -> ProviderConfig:
     # Prefer Groq if available (faster)
     if os.getenv("GROQ_API_KEY"):
         return PROVIDERS["groq"]
+    
+    # Then prefer OpenAI (reliable)
+    if os.getenv("OPENAI_API_KEY"):
+        return PROVIDERS["openai"]
     
     # Then check other providers
     for name, config in PROVIDERS.items():

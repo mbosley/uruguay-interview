@@ -52,7 +52,7 @@ class ResearchRequest(BaseModel):
     question: str
     provider: Optional[str] = "moonshot"
     max_iterations: Optional[int] = 8
-    use_mock: Optional[bool] = False  # For testing frontend
+    use_mock: Optional[bool] = False  # For testing frontend - no LLM calls, instant responses
     test_mode: Optional[bool] = False  # Quick test with fewer iterations
 
 class ResearchResponse(BaseModel):
@@ -183,7 +183,9 @@ async def run_research_job(job_id: str, question: str, provider: str, max_iterat
             unified_logger.event(event.get('type', 'unknown'), event)
             # Publish to event store (non-blocking)
             event_store.publish(f"job:{job_id}", event)
-            print(f"[{datetime.now()}] Published event {event.get('type')} to job:{job_id}")
+            print(f"[{datetime.now()}] ✅ Published event '{event.get('type')}' to event store for job:{job_id}")
+            # Force yield to allow SSE to process events immediately
+            await asyncio.sleep(0)
         
         # Initialize agent (mock or real based on flag)
         if use_mock:
@@ -219,10 +221,13 @@ async def run_research_job(job_id: str, question: str, provider: str, max_iterat
         sources = list(set(sources))[:5]  # Unique, max 5
         
         # For backwards compatibility, also send a "result" event
+        # Use final_report if available, otherwise fall back to final_response
+        final_content = results.get('final_report', results.get('final_response', 'No response generated'))
+        
         event_store.publish(f"job:{job_id}", {
             'type': 'result',
             'data': {
-                'response': results.get('final_response', 'No response generated'),
+                'response': final_content,
                 'sources': sources,
                 'stats': results.get('stats', {})
             },
@@ -414,13 +419,14 @@ async def research_events_sse(job_id: str):
         try:
             while True:
                 try:
-                    # Wait for events with timeout
-                    event = await asyncio.wait_for(queue.get(), timeout=30.0)
+                    # Wait for events with a short timeout
+                    event = await asyncio.wait_for(queue.get(), timeout=1.0)
+                    print(f"[{datetime.now()}] 📥 SSE retrieved from queue: '{event.get('type')}' (job:{job_id})")
                     
                     # Format as SSE
                     json_str = json.dumps(event, cls=DateTimeEncoder)
                     yield f"data: {json_str}\n\n"
-                    print(f"[{datetime.now()}] SSE sent event: {event.get('type')}")
+                    print(f"[{datetime.now()}] 📤 SSE sent to client: '{event.get('type')}' (job:{job_id})")
                     
                     # Check if this is a terminal event
                     if event.get('type') in ['response_end', 'error', 'result']:
@@ -428,13 +434,20 @@ async def research_events_sse(job_id: str):
                         break
                         
                 except asyncio.TimeoutError:
-                    # Send keepalive
-                    yield ": keepalive\n\n"
-                    
                     # Check if job is complete
                     if job_id in jobs and jobs[job_id]['status'] in ['completed', 'failed']:
+                        # Give it one more second for final events
+                        try:
+                            event = await asyncio.wait_for(queue.get(), timeout=1.0)
+                            json_str = json.dumps(event, cls=DateTimeEncoder)
+                            yield f"data: {json_str}\n\n"
+                            print(f"[{datetime.now()}] 📤 SSE sent final event: '{event.get('type')}' (job:{job_id})")
+                        except asyncio.TimeoutError:
+                            pass
                         print(f"[{datetime.now()}] SSE job completed, closing")
                         break
+                    # Send keepalive
+                    yield ": keepalive\n\n"
                         
         except Exception as e:
             print(f"[{datetime.now()}] SSE error: {e}")
@@ -503,6 +516,12 @@ async def get_interview(interview_id: str):
     # Ensure proper JSON serialization
     from fastapi.responses import JSONResponse
     return JSONResponse(content=corpus[interview_id], media_type="application/json")
+
+@app.post("/research/{job_id}/ack/{event_type}")
+async def acknowledge_event(job_id: str, event_type: str):
+    """Frontend can acknowledge receipt of events for debugging"""
+    print(f"[{datetime.now()}] ✔️  Frontend ACK: '{event_type}' received (job:{job_id})")
+    return {"acknowledged": True}
 
 @app.get("/health")
 async def health_check():

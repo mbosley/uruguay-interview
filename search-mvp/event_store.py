@@ -47,6 +47,9 @@ class EventStore:
         with self._lock:
             # Store event
             self._events[channel].append(event_obj)
+            queue_count = len(self._subscribers[channel])
+            if queue_count > 0:
+                print(f"[{datetime.now()}] 📮 Event '{event_obj.type}' queued for {queue_count} subscriber(s) on {channel}")
             
             # Notify all subscribers
             dead_queues = []

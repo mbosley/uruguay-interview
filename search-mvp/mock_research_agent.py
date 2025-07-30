@@ -73,9 +73,28 @@ class MockResearchAgent:
                 
                 await self.emit_event("tool_result", {
                     "tool": "get_corpus_stats",
+                    "result": '{"type": "corpus_stats", "total_interviews": 37, "total_turns": 5510, "unique_themes": 121, "unique_speakers": 95, "total_notable_quotes": 444, "avg_turns_per_interview": 149}',
                     "metadata": {
                         "size": 359,
                         "preview": "37 interviews, 5510 total turns, average 149 turns per interview"
+                    }
+                }, iteration)
+                self.stats['tool_calls'] += 1
+                
+                # Add scratchpad note
+                await self.emit_event("tool_call", {
+                    "tool": "scratchpad_append",
+                    "args": {"note": "Initial corpus scan reveals 37 interviews with rich healthcare discussions. The scale of data is significant - 5510 turns total. Need to focus on healthcare-specific themes to find patterns in citizen concerns."},
+                    "id": f"call_{iteration}_2"
+                }, iteration)
+                await asyncio.sleep(0.5)
+                
+                await self.emit_event("tool_result", {
+                    "tool": "scratchpad_append",
+                    "result": "Initial corpus scan reveals 37 interviews with rich healthcare discussions. The scale of data is significant - 5510 turns total. Need to focus on healthcare-specific themes to find patterns in citizen concerns.",
+                    "metadata": {
+                        "size": 41,
+                        "preview": "Note added"
                     }
                 }, iteration)
                 self.stats['tool_calls'] += 1
@@ -156,10 +175,29 @@ class MockResearchAgent:
             self.stats['output_tokens'] += 800
             self.stats['total_cost'] += 0.0025
         
-        # Emit response generation events
-        await self.emit_event("response_start", {})
+        # Emit research complete event
+        await self.emit_event("research_complete", {
+            "iterations": self.stats['iterations'],
+            "tool_calls": self.stats['tool_calls']
+        })
+        
+        # Simulate summary generation phase
+        await self.emit_event("summary_generation_start", {
+            "tool_calls": self.stats['tool_calls'],
+            "iterations": self.stats['iterations']
+        })
         await self.emit_event("progress", {"message": "Generating comprehensive summary..."})
-        await asyncio.sleep(1.5)
+        await asyncio.sleep(2.0)  # Simulate summary generation time
+        
+        await self.emit_event("summary_generation_end", {
+            "summary_length": 2500
+        })
+        
+        # Simulate report generation phase
+        await self.emit_event("report_generation_start", {
+            "method": "synthesis"
+        })
+        await asyncio.sleep(1.5)  # Simulate report generation time
         
         # Generate mock response
         final_response = """# Research Summary: Healthcare Concerns in Uruguay
@@ -202,7 +240,8 @@ The waiting time issue connects directly to specialist shortages. Citizens descr
         # Extract sources
         sources = ["Interview 071", "Interview 084", "Interview 089", "Interview 068", "Interview 091"]
         
-        await self.emit_event("response_end", {
+        # Emit report generation end
+        await self.emit_event("report_generation_end", {
             "response": final_response,
             "sources": sources
         })

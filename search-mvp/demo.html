@@ -70,6 +70,65 @@
             gap: 1rem;
             margin-bottom: 1rem;
         }
+        
+        .slider-container {
+            margin: 1rem 0;
+            padding: 0.75rem;
+            background: var(--gray-50);
+            border-radius: 8px;
+        }
+        
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--gray-700);
+        }
+        
+        .slider-value {
+            font-weight: 600;
+            color: var(--primary);
+        }
+        
+        input[type="range"] {
+            width: 100%;
+            height: 6px;
+            background: var(--gray-200);
+            outline: none;
+            border-radius: 3px;
+            -webkit-appearance: none;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            cursor: pointer;
+            border-radius: 50%;
+            transition: background 0.2s;
+        }
+        
+        input[type="range"]::-webkit-slider-thumb:hover {
+            background: var(--primary-dark);
+        }
+        
+        input[type="range"]::-moz-range-thumb {
+            width: 18px;
+            height: 18px;
+            background: var(--primary);
+            cursor: pointer;
+            border-radius: 50%;
+            border: none;
+            transition: background 0.2s;
+        }
+        
+        input[type="range"]::-moz-range-thumb:hover {
+            background: var(--primary-dark);
+        }
 
         input[type="text"] {
             flex: 1;
@@ -130,26 +189,62 @@
 
         .trace-container {
             margin-bottom: 2rem;
+            min-width: 100%;
         }
 
         .trace-header {
             display: flex;
             align-items: center;
             gap: 0.5rem;
-            padding: 0.5rem;
+            padding: 0.75rem 1rem;
             background: var(--gray-100);
             border-radius: 8px;
             cursor: pointer;
             user-select: none;
+            transition: background-color 0.3s ease;
+            min-height: 48px;
+        }
+        
+        .trace-header.research-phase {
+            background: var(--gray-100);
+        }
+        
+        .trace-header.report-phase {
+            background: #e0f2fe;
+        }
+        
+        .trace-header.complete-phase {
+            background: #d1fae5;
         }
 
         .trace-header:hover {
             background: var(--gray-200);
         }
+        
+        .trace-header:hover.report-phase {
+            background: #bae6fd;
+        }
+        
+        .trace-header:hover.complete-phase {
+            background: #a7f3d0;
+        }
 
         .trace-toggle {
             font-size: 0.875rem;
             color: var(--gray-500);
+            font-weight: 500;
+        }
+        
+        .trace-toggle.research-phase {
+            color: var(--gray-600);
+        }
+        
+        .trace-toggle.report-phase {
+            color: #0369a1;
+        }
+        
+        .trace-toggle.complete-phase {
+            color: #059669;
         }
 
         .trace-content {
@@ -198,16 +293,20 @@
 
         .tool-preview {
             margin-top: 0.5rem;
-            padding: 0.5rem;
+            padding: 0.75rem;
             background: white;
             border: 1px solid var(--gray-200);
             border-radius: 4px;
             font-size: 0.8rem;
             color: var(--gray-600);
-            max-height: 100px;
             overflow-y: auto;
             cursor: pointer;
             transition: max-height 0.3s ease;
+            position: relative;
+        }
+        
+        .tool-preview:not(.expanded) {
+            max-height: 100px;
         }
 
         .tool-preview.expanded {
@@ -248,102 +347,90 @@
         }
 
         .final-report {
-            line-height: 1.8;
-            font-size: 1.05rem;
+            line-height: 1.7;
+            font-size: 1rem;
+            color: var(--gray-800);
+            max-width: 800px;
+            margin: 0 auto;
         }
 
         .final-report h1 {
-            font-size: 1.8rem;
-            margin: 1.5rem 0 1rem;
+            font-size: 1.5rem;
+            margin: 2rem 0 1rem;
             color: var(--gray-900);
-            border-bottom: 2px solid var(--gray-200);
-            padding-bottom: 0.5rem;
+            font-weight: 600;
         }
 
         .final-report h2 {
-            font-size: 1.4rem;
-            margin: 2rem 0 1rem;
+            font-size: 1.25rem;
+            margin: 1.75rem 0 0.75rem;
             color: var(--gray-800);
+            font-weight: 600;
         }
 
         .final-report h3 {
-            font-size: 1.2rem;
-            margin: 1.5rem 0 0.75rem;
+            font-size: 1.1rem;
+            margin: 1.5rem 0 0.5rem;
             color: var(--gray-700);
             font-weight: 600;
+        }
+
+        .final-report h4 {
+            font-size: 1rem;
+            margin: 0 0 0.75rem;
+            color: var(--gray-900);
+            font-weight: 600;
+        }
+
+        .final-report p {
+            margin-bottom: 1rem;
+        }
+
+        .final-report ul {
+            margin: 1rem 0;
+            padding-left: 1.5rem;
+        }
+
+        .final-report li {
+            margin-bottom: 0.5rem;
         }
 
         .finding {
-            background: #f8f9fa;
-            border-left: 4px solid var(--primary);
-            padding: 1rem 1.25rem;
+            background: var(--gray-50);
+            border-left: 3px solid var(--gray-300);
+            padding: 1.25rem;
             margin: 1.5rem 0;
-            border-radius: 0 8px 8px 0;
+            border-radius: 4px;
         }
 
-        .finding-header {
-            font-weight: 600;
-            color: var(--gray-900);
-            margin-bottom: 0.5rem;
-        }
-
-        .finding-statement {
-            color: var(--gray-700);
-            margin-bottom: 0.75rem;
-        }
-
-        .finding-evidence {
-            font-size: 0.95rem;
-            color: var(--gray-600);
-            font-style: italic;
-            margin-bottom: 0.5rem;
-        }
-
+        .finding-statement,
+        .finding-evidence,
         .finding-significance {
-            font-size: 0.95rem;
+            margin: 0.5rem 0;
+            line-height: 1.6;
+        }
+
+        .finding-statement strong,
+        .finding-evidence strong,
+        .finding-significance strong {
+            font-weight: 600;
             color: var(--gray-700);
-            background: #fef3c7;
-            padding: 0.5rem 0.75rem;
-            border-radius: 6px;
-            margin-top: 0.75rem;
         }
 
         .citation {
-            color: var(--primary);
+            color: var(--gray-600);
             text-decoration: none;
             cursor: pointer;
-            border-bottom: 1px dashed var(--primary);
-            font-weight: 500;
+            border-bottom: 1px solid var(--gray-300);
+            font-size: 0.9rem;
+            transition: all 0.2s;
         }
 
         .citation:hover {
-            background: var(--primary);
-            color: white;
-            padding: 0 0.25rem;
-            border-radius: 3px;
-            border-bottom: none;
+            color: var(--primary);
+            border-bottom-color: var(--primary);
         }
 
-        .report-section {
-            margin: 2rem 0;
-        }
-
-        .evidence-quote {
-            background: white;
-            padding: 0.75rem 1rem;
-            border-radius: 6px;
-            margin: 0.5rem 0;
-            border: 1px solid var(--gray-200);
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .streaming-text {
-            animation: fadeIn 0.3s ease-out;
-        }
 
         .loading {
             display: flex;
@@ -401,6 +488,34 @@
             display: none;
         }
 
+        .provider-btn {
+            padding: 0.25rem 0.75rem;
+            border: 1px solid var(--gray-300);
+            border-radius: 6px;
+            background: white;
+            color: var(--gray-700);
+            font-size: 0.75rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .provider-btn:hover {
+            background: var(--gray-50);
+            border-color: var(--gray-400);
+        }
+
+        .provider-btn.active {
+            background: var(--blue-500);
+            color: white;
+            border-color: var(--blue-500);
+        }
+
+        .provider-btn.active:hover {
+            background: var(--blue-600);
+            border-color: var(--blue-600);
+        }
+
         /* Responsive */
         @media (max-width: 768px) {
             .container {
@@ -444,6 +559,36 @@
                     >
                     <button id="submitBtn" onclick="startResearch()">Research</button>
                 </div>
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Research Iterations</span>
+                        <span class="slider-value" id="iterationValue">8</span>
+                    </div>
+                    <input type="range" id="iterationSlider" min="3" max="15" value="8" step="1" oninput="updateIterationValue()">
+                    <div style="margin-top: 0.5rem; font-size: 0.75rem; color: var(--gray-500);">
+                        More iterations = deeper exploration (3-5: quick, 6-10: thorough, 11-15: exhaustive)
+                    </div>
+                    <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--gray-200);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                            <div class="slider-label">
+                                <span>AI Provider</span>
+                                <span class="slider-value" id="providerValue">Moonshot</span>
+                            </div>
+                            <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+                                <button onclick="setProvider('moonshot')" id="moonshotBtn" class="provider-btn active">Moonshot</button>
+                                <button onclick="setProvider('groq')" id="groqBtn" class="provider-btn">Groq</button>
+                                <button onclick="setProvider('openai')" id="openaiBtn" class="provider-btn">OpenAI</button>
+                            </div>
+                        </div>
+                        <div style="font-size: 0.75rem; color: var(--gray-500); margin-bottom: 0.75rem;">
+                            Moonshot: High-quality reasoning | Groq: Ultra-fast responses | OpenAI: o4-mini efficient
+                        </div>
+                        <label style="display: flex; align-items: center; cursor: pointer;">
+                            <input type="checkbox" id="dryRunMode" style="margin-right: 0.5rem;">
+                            <span style="font-size: 0.875rem;">Dry run mode (instant mock responses for frontend testing)</span>
+                        </label>
+                    </div>
+                </div>
                 <div class="example-questions">
                     <button class="example-btn" onclick="setQuestion('What do citizens say about education?')">Education</button>
                     <button class="example-btn" onclick="setQuestion('What challenges do rural communities face?')">Rural challenges</button>
@@ -454,13 +599,16 @@
             <div class="results-section" id="results">
                 <div class="trace-container hidden" id="traceContainer">
                     <div class="trace-header" onclick="toggleTrace()">
-                        <span id="traceToggle">▼</span>
-                        <span>Research Trace</span>
-                        <span class="trace-toggle" id="traceStatus">Live</span>
+                        <span id="traceToggle" style="width: 20px; text-align: center; flex-shrink: 0;">▼</span>
+                        <span style="flex-grow: 1;">Research Trace</span>
+                        <span class="trace-toggle" id="traceStatus">Starting...</span>
                     </div>
                     <div class="trace-content" id="traceContent"></div>
                 </div>
-                <div id="finalReport"></div>
+                <div class="report-section" id="reportSection" style="display: none;">
+                    <h2 style="font-size: 1.25rem; margin: 2rem 0 1rem; color: var(--gray-800);">Research Report</h2>
+                    <div id="finalReport"></div>
+                </div>
             </div>
         </div>
     </div>
@@ -470,9 +618,35 @@
         let eventSource = null;
         let currentJobId = null;
         let traceExpanded = true;
+        let currentPhase = 'idle'; // idle, research, report_generation, complete
 
         function setQuestion(question) {
             document.getElementById('questionInput').value = question;
+        }
+        
+        function updateIterationValue() {
+            const slider = document.getElementById('iterationSlider');
+            const valueDisplay = document.getElementById('iterationValue');
+            valueDisplay.textContent = slider.value;
+        }
+
+        let selectedProvider = 'moonshot'; // Default provider
+
+        function setProvider(provider) {
+            selectedProvider = provider;
+            
+            // Update button states
+            document.getElementById('moonshotBtn').classList.toggle('active', provider === 'moonshot');
+            document.getElementById('groqBtn').classList.toggle('active', provider === 'groq');
+            document.getElementById('openaiBtn').classList.toggle('active', provider === 'openai');
+            
+            // Update display value
+            const displayNames = {
+                'moonshot': 'Moonshot',
+                'groq': 'Groq', 
+                'openai': 'OpenAI'
+            };
+            document.getElementById('providerValue').textContent = displayNames[provider] || provider;
         }
 
         function toggleTrace() {
@@ -489,26 +663,61 @@
             }
         }
 
+        function updatePhaseUI() {
+            const header = document.querySelector('.trace-header');
+            const status = document.getElementById('traceStatus');
+            
+            // Remove all phase classes
+            header.classList.remove('research-phase', 'report-phase', 'complete-phase');
+            status.classList.remove('research-phase', 'report-phase', 'complete-phase');
+            
+            // Add current phase class
+            switch(currentPhase) {
+                case 'research':
+                    header.classList.add('research-phase');
+                    status.classList.add('research-phase');
+                    break;
+                case 'report_generation':
+                    header.classList.add('report-phase');
+                    status.classList.add('report-phase');
+                    break;
+                case 'complete':
+                    header.classList.add('complete-phase');
+                    status.classList.add('complete-phase');
+                    break;
+            }
+        }
+
         async function startResearch() {
             const question = document.getElementById('questionInput').value.trim();
             if (!question) return;
 
             // Clear previous results
-            reportContent = '';
+            currentPhase = 'research';
             document.getElementById('traceContent').innerHTML = '';
-            document.getElementById('finalReport').innerHTML = '<div class="loading"><div class="spinner"></div> Starting research...</div>';
+            document.getElementById('finalReport').innerHTML = '';
+            document.getElementById('reportSection').style.display = 'none';
             document.getElementById('traceContainer').classList.remove('hidden');
+            document.getElementById('traceStatus').textContent = 'Researching...';
             document.getElementById('submitBtn').disabled = true;
+            updatePhaseUI();
 
             try {
+                // Get iteration count from slider
+                const iterations = parseInt(document.getElementById('iterationSlider').value);
+                
+                // Check dry run mode
+                const useMock = document.getElementById('dryRunMode').checked;
+                
                 // Start research job
                 const response = await fetch(`${API_URL}/research`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         question: question,
-                        provider: 'moonshot',
-                        max_iterations: 10
+                        provider: selectedProvider,
+                        max_iterations: iterations,
+                        use_mock: useMock
                     })
                 });
 
@@ -544,6 +753,19 @@
 
         function handleEvent(event) {
             const traceContent = document.getElementById('traceContent');
+            
+            // Debug logging and acknowledgment for phase events
+            const phaseEvents = ['research_complete', 'summary_generation_start', 'summary_generation_end', 
+                                'report_generation_start', 'report_generation_end', 'response_start', 'response_end'];
+            
+            if (phaseEvents.includes(event.type)) {
+                console.log(`Phase event: ${event.type}, current phase: ${currentPhase}`);
+                // Send acknowledgment to backend (fire and forget)
+                if (currentJobId) {
+                    fetch(`${API_URL}/research/${currentJobId}/ack/${event.type}`, { method: 'POST' })
+                        .catch(() => {}); // Ignore errors
+                }
+            }
             
             switch (event.type) {
                 case 'iteration_start':
@@ -594,24 +816,29 @@
                                 break;
                             case 'scratchpad_append':
                                 toolDisplay = `📝 Taking notes...`;
-                                // Add note preview for scratchpad
-                                if (args.note) {
-                                    const notePreview = document.createElement('div');
-                                    notePreview.className = 'tool-preview';
-                                    notePreview.innerHTML = `
-                                        <div class="note-content">${args.note.substring(0, 200)}${args.note.length > 200 ? '...' : ''}</div>
-                                        ${args.note.length > 200 ? '<span class="expand-indicator">Click to expand</span>' : ''}
-                                    `;
-                                    notePreview.onclick = () => togglePreview(notePreview);
-                                    notePreview.dataset.fullContent = args.note;
-                                    toolDiv.appendChild(notePreview);
-                                }
                                 break;
                             default:
                                 toolDisplay = `🔧 ${tool}(${JSON.stringify(args).substring(0, 50)})`;
                         }
                         
-                        toolDiv.innerHTML = toolDisplay + toolDiv.innerHTML;
+                        // Set the tool display text
+                        const toolText = document.createElement('span');
+                        toolText.innerHTML = toolDisplay;
+                        toolDiv.appendChild(toolText);
+                        
+                        // Add note preview for scratchpad AFTER setting the display
+                        if (tool === 'scratchpad_append' && args.note) {
+                            const notePreview = document.createElement('div');
+                            notePreview.className = 'tool-preview';
+                            notePreview.innerHTML = `
+                                <div class="note-content">${args.note.substring(0, 200)}${args.note.length > 200 ? '...' : ''}</div>
+                                ${args.note.length > 200 ? '<span class="expand-indicator">Click to expand</span>' : ''}
+                            `;
+                            notePreview.onclick = () => togglePreview(notePreview);
+                            notePreview.dataset.fullContent = args.note;
+                            toolDiv.appendChild(notePreview);
+                        }
+                        
                         toolIter.appendChild(toolDiv);
                     }
                     break;
@@ -625,6 +852,9 @@
                         if (lastTool) {
                             const resultDiv = document.createElement('div');
                             resultDiv.className = 'tool-result';
+                            
+                            // Debug: log what we're receiving
+                            console.log('Tool result event:', event.data);
                             
                             // More informative results based on tool type
                             const preview = event.data.metadata.preview;
@@ -666,25 +896,69 @@
                     }
                     break;
 
-                case 'response_start':
-                    document.getElementById('finalReport').innerHTML = '<div class="final-report" id="streamingReport"></div>';
-                    document.getElementById('traceStatus').textContent = 'Generating report...';
+                case 'research_complete':
+                    currentPhase = 'summarizing';
+                    document.getElementById('traceStatus').textContent = 'Research complete, preparing summary...';
+                    updatePhaseUI();
+                    // Collapse the trace when research is done
+                    if (traceExpanded) {
+                        toggleTrace();
+                    }
+                    break;
+                
+                case 'summary_generation_start':
+                    currentPhase = 'summarizing';
+                    document.getElementById('traceStatus').textContent = 'Generating initial summary...';
+                    break;
+                
+                case 'summary_generation_end':
+                    currentPhase = 'report_generation';
+                    document.getElementById('traceStatus').textContent = 'Summary complete';
                     break;
 
-                case 'response_chunk':
-                    appendReportChunk(event.data.chunk);
+                case 'report_generation_start':
+                    currentPhase = 'report_generation';
+                    // Show the report section with loading state
+                    document.getElementById('reportSection').style.display = 'block';
+                    document.getElementById('finalReport').innerHTML = '<div class="loading"><div class="spinner"></div> Generating report...</div>';
+                    document.getElementById('traceStatus').textContent = 'Generating report...';
+                    updatePhaseUI();
+                    break;
+
+
+                case 'report_generation_end':
+                    currentPhase = 'complete';
+                    // Display the complete report
+                    if (event.data.response) {
+                        displayReport(event.data.response);
+                    }
+                    document.getElementById('traceStatus').textContent = 'Complete';
+                    updatePhaseUI();
+                    eventSource.close();
+                    document.getElementById('submitBtn').disabled = false;
+                    break;
+                    
+                // Legacy event names for backward compatibility
+                case 'response_start':
+                    if (currentPhase === 'research' || currentPhase === 'report_generation') {
+                        // Handle old format - ensure we're in report generation phase
+                        currentPhase = 'report_generation';
+                        document.getElementById('reportSection').style.display = 'block';
+                        document.getElementById('finalReport').innerHTML = '<div class="loading"><div class="spinner"></div> Generating report...</div>';
+                        document.getElementById('traceStatus').textContent = 'Generating report...';
+                        updatePhaseUI();
+                    }
                     break;
 
                 case 'response_end':
-                    // Handle both streaming and non-streaming responses
-                    if (event.data.response && !reportContent) {
-                        // Non-streaming response
-                        reportContent = event.data.response;
-                        document.getElementById('finalReport').innerHTML = '<div class="final-report" id="streamingReport"></div>';
+                    if (currentPhase !== 'complete') {
+                        currentPhase = 'complete';
+                        if (event.data.response) {
+                            displayReport(event.data.response);
+                        }
+                        document.getElementById('traceStatus').textContent = 'Complete';
+                        updatePhaseUI();
                     }
-                    // Format the complete report
-                    formatFinalReport();
-                    document.getElementById('traceStatus').textContent = 'Completed';
                     eventSource.close();
                     document.getElementById('submitBtn').disabled = false;
                     break;
@@ -701,7 +975,6 @@
             }
         }
 
-        let reportContent = '';
 
         function togglePreview(element) {
             element.classList.toggle('expanded');
@@ -765,27 +1038,46 @@
                         if (data.turns && data.turns.length > 0) {
                             const firstTurn = data.turns[0];
                             content = `<div class="preview-label">${data.interview_id || 'Interview'} - ${firstTurn.speaker}:</div>`;
-                            content += `<div class="preview-content">"${firstTurn.text.substring(0, 300)}..."</div>`;
+                            content += `<div class="preview-content">"${firstTurn.text.substring(0, 300)}${firstTurn.text.length > 300 ? '...' : ''}"</div>`;
                         } else if (data.type === 'interview_summary') {
                             content = `<div class="preview-label">Interview ${data.interview_id} Summary:</div>`;
-                            content += `<div class="preview-content">${data.summary.substring(0, 300)}...</div>`;
+                            content += `<div class="preview-content">${data.summary.substring(0, 300)}${data.summary.length > 300 ? '...' : ''}</div>`;
                             if (data.key_themes && data.key_themes.length > 0) {
                                 content += `<div style="margin-top: 0.5rem;"><strong>Themes:</strong> ${data.key_themes.slice(0, 3).map(t => t.theme || t).join(', ')}</div>`;
                             }
+                        } else {
+                            // Fallback for any other format
+                            content = `<div class="preview-label">Interview Content:</div>`;
+                            content += `<div class="preview-content">${JSON.stringify(data).substring(0, 300)}...</div>`;
                         }
                         fullContent = JSON.stringify(data, null, 2);
                         break;
                         
                     case 'list_interview_themes':
                     case 'search_themes':
+                        console.log('Theme data:', data);
                         if (data.themes || data.meta_themes) {
-                            const themes = data.themes || {};
-                            const themeList = Object.entries(themes).slice(0, 5);
-                            content = `<div class="preview-label">Top themes:</div>`;
-                            themeList.forEach(([theme, info]) => {
-                                const count = typeof info === 'string' ? info : `${info.total_occurrences} occurrences`;
-                                content += `<div class="search-result">• ${theme}: ${count}</div>`;
-                            });
+                            const themes = data.themes || data.meta_themes || {};
+                            // Filter out empty theme names and limit to 5
+                            const themeList = Object.entries(themes)
+                                .filter(([theme, info]) => theme && theme.trim())
+                                .slice(0, 5);
+                            if (themeList.length > 0) {
+                                content = `<div class="preview-label">Top themes:</div>`;
+                                themeList.forEach(([theme, info]) => {
+                                    const count = typeof info === 'string' ? info : 
+                                                 typeof info === 'object' ? `${info.total_occurrences || info.count || 'multiple'} occurrences` : 
+                                                 'found';
+                                    content += `<div class="search-result">• ${theme}: ${count}</div>`;
+                                });
+                            } else {
+                                content = `<div class="preview-label">Themes found</div>`;
+                                content += `<div class="preview-content">See full data...</div>`;
+                            }
+                        } else {
+                            // Try to show whatever we have
+                            content = `<div class="preview-label">Theme data:</div>`;
+                            content += `<div class="preview-content">${JSON.stringify(data).substring(0, 200)}...</div>`;
                         }
                         fullContent = JSON.stringify(data, null, 2);
                         break;
@@ -809,71 +1101,50 @@
             return null;
         }
 
-        function appendReportChunk(chunk) {
-            reportContent += chunk;
-            const reportDiv = document.getElementById('streamingReport');
-            if (reportDiv) {
-                // Basic markdown parsing for streaming
-                const formatted = chunk
-                    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-                    .replace(/\*(.*?)\*/g, '<em>$1</em>');
-                
-                const span = document.createElement('span');
-                span.className = 'streaming-text';
-                span.innerHTML = formatted;
-                reportDiv.appendChild(span);
-            }
-        }
 
-        function formatFinalReport() {
-            const reportDiv = document.getElementById('streamingReport');
-            if (!reportDiv) return;
+        function displayReport(reportText) {
+            // Report section should already be visible from report_generation_start
+            // Just replace the loading spinner with the actual report
             
-            // Parse the complete markdown report with better formatting
-            let formatted = reportContent;
+            // Simple markdown to HTML conversion
+            let html = reportText;
             
-            // Parse headers
-            formatted = formatted.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
-            formatted = formatted.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
-            formatted = formatted.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+            // Convert headers
+            html = html.replace(/^### (.*?)$/gm, '<h3>$1</h3>');
+            html = html.replace(/^## (.*?)$/gm, '<h2>$1</h2>');
+            html = html.replace(/^# (.*?)$/gm, '<h1>$1</h1>');
             
-            // Parse findings with custom formatting
-            formatted = formatted.replace(/Finding_(\d+):\s*(.*?)\n/g, function(match, num, title) {
-                return `<div class="finding"><div class="finding-header">Finding ${num}: ${title}</div>`;
-            });
+            // Convert findings structure
+            html = html.replace(/Finding_(\d+):\s*(.*?)$/gm, '<div class="finding"><h4>Finding $1: $2</h4>');
+            html = html.replace(/^- Statement:\s*(.*?)$/gm, '<p><strong>Statement:</strong> $1</p>');
+            html = html.replace(/^- Evidence:\s*(.*?)$/gm, '<p><strong>Evidence:</strong> $1</p>');
+            html = html.replace(/^- Significance:\s*(.*?)$/gm, '<p><strong>Significance:</strong> $1</p></div>');
             
-            // Parse statement, evidence, significance
-            formatted = formatted.replace(/- Statement:\s*(.*?)(?=\n-|\n\n|$)/gs, '<div class="finding-statement">$1</div>');
-            formatted = formatted.replace(/- Evidence:\s*(.*?)(?=\n-|\n\n|$)/gs, '<div class="finding-evidence">Evidence: $1</div>');
-            formatted = formatted.replace(/- Significance:\s*(.*?)(?=\n\n|$)/gs, '<div class="finding-significance">💡 $1</div></div>');
+            // Convert citations
+            html = html.replace(/\((\d{3}):(\d+)\)/g, '<span class="citation" data-ref="$1:$2">($1:$2)</span>');
+            html = html.replace(/`(\d{3}):(\d+)`/g, '<span class="citation" data-ref="$1:$2">$1:$2</span>');
             
-            // Parse citations
-            formatted = formatted.replace(/Interview (\d{3})/g, '<a class="citation" onclick="viewInterview(\'$1\')">Interview $1</a>');
-            formatted = formatted.replace(/\((\d{3}):([\d-]+)\)/g, '(<a class="citation" onclick="viewTurn(\'$1:$2\')">$1:$2</a>)');
-            formatted = formatted.replace(/\(`(\d{3}):([\d-]+)`\)/g, '(<a class="citation" onclick="viewTurn(\'$1:$2\')">$1:$2</a>)');
+            // Convert bold and italic
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
             
-            // Parse quotes
-            formatted = formatted.replace(/"([^"]+)"/g, function(match, quote) {
-                if (quote.length > 50) {
-                    return `<div class="evidence-quote">"${quote}"</div>`;
-                }
-                return `"${quote}"`;
-            });
+            // Convert bullet points
+            html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
             
-            // Parse bold and italic
-            formatted = formatted.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            formatted = formatted.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Wrap consecutive list items in ul tags
+            html = html.replace(/(<li>.*<\/li>\s*)+/g, '<ul>$&</ul>');
             
-            // Parse paragraphs
-            formatted = formatted.replace(/\n\n/g, '</p><p>');
-            formatted = '<p>' + formatted + '</p>';
+            // Convert paragraphs (double newlines)
+            html = html.split('\n\n').map(para => {
+                para = para.trim();
+                if (!para) return '';
+                // Don't wrap if already HTML
+                if (para.match(/^<[^>]+>/)) return para;
+                return '<p>' + para + '</p>';
+            }).join('\n');
             
-            // Clean up empty paragraphs
-            formatted = formatted.replace(/<p>\s*<\/p>/g, '');
-            formatted = formatted.replace(/<p>(<h[123]>)/g, '$1');
-            formatted = formatted.replace(/(<\/h[123]>)<\/p>/g, '$1');
-            
-            reportDiv.innerHTML = formatted;
+            // Set the HTML
+            document.getElementById('finalReport').innerHTML = '<div class="final-report">' + html + '</div>';
         }
 
         function displayStats(stats) {
