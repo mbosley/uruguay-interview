@@ -1,0 +1,11 @@
+# Copy and paste these commands in your terminal:
+
+railway variables set MOONSHOT_API_KEY="YOUR_MOONSHOT_API_KEY_HERE"
+railway variables set GROQ_API_KEY="YOUR_GROQ_API_KEY_HERE"
+railway variables set PYTHON_VERSION="3.11"
+
+# After setting variables, deploy:
+railway up
+
+# Get your deployment URL:
+railway open

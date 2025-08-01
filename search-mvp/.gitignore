@@ -20,6 +20,9 @@ scratchpads/
 data/raw/
 data/processed/
 
+# Archived content
+archived/
+
 # IDEs
 .vscode/
 .idea/

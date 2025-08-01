@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interview View</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f5f5f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: #2c3e50;
+            color: white;
+            padding: 30px;
+        }
+
+        .header h1 {
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .metadata {
+            display: flex;
+            gap: 30px;
+            font-size: 0.9em;
+            opacity: 0.9;
+        }
+
+        .metadata span {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .summary-section {
+            background: #ecf0f1;
+            padding: 30px;
+            border-left: 4px solid #3498db;
+        }
+
+        .summary-section h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .themes-section {
+            padding: 30px;
+            background: #fff;
+        }
+
+        .themes-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .theme-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .theme-tag {
+            background: #3498db;
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            display: inline-block;
+        }
+
+        .quotes-section {
+            padding: 30px;
+            background: #f8f9fa;
+        }
+
+        .quotes-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .quote {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #e74c3c;
+            border-radius: 4px;
+            font-style: italic;
+        }
+
+        .quote-reference {
+            margin-top: 10px;
+            font-size: 0.85em;
+            color: #666;
+            font-style: normal;
+        }
+
+        .turns-section {
+            padding: 30px;
+        }
+
+        .turns-section h2 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.4em;
+        }
+
+        .turn {
+            margin-bottom: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .turn:target {
+            animation: highlight 1s ease;
+        }
+        
+        @keyframes highlight {
+            0% { background: #fff3cd; transform: scale(1.02); }
+            100% { background: #f8f9fa; transform: scale(1); }
+        }
+
+        .turn-number {
+            position: absolute;
+            left: -10px;
+            top: 20px;
+            background: #34495e;
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.85em;
+            font-weight: bold;
+        }
+
+        .speaker {
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            margin-left: 20px;
+        }
+
+        .turn-text {
+            margin-left: 20px;
+            color: #555;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 50px;
+            font-size: 1.2em;
+            color: #666;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 20px;
+            border-radius: 4px;
+            margin: 20px;
+        }
+
+        .back-link {
+            padding: 20px 30px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .back-link a {
+            color: #3498db;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+
+        /* Research notes section */
+        .notes-section {
+            padding: 30px;
+            background: #fffbf0;
+            border-left: 4px solid #f39c12;
+        }
+
+        .notes-section h2 {
+            color: #2c3e50;
+            margin-bottom: 15px;
+            font-size: 1.4em;
+        }
+
+        .note {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 4px;
+            font-size: 0.95em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="back-link">
+            <a href="javascript:window.close()">← Back to Research</a>
+        </div>
+        
+        <div id="content">
+            <div class="loading">Loading interview...</div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration - Update this when changing backends
+        const API_URL = 'https://b6358c55f973.ngrok-free.app';  // ngrok URL for local backend
+        // const API_URL = 'http://localhost:8001';  // Direct local backend
+        // const API_URL = 'https://your-app.up.railway.app';  // Railway deployment
+        
+        // Get interview ID from URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const interviewId = urlParams.get('id');
+        
+        if (!interviewId) {
+            showError('No interview ID provided');
+        } else {
+            loadInterview(interviewId);
+        }
+        
+        async function loadInterview(id) {
+            try {
+                // Fetch full interview data
+                const response = await fetch(`${API_URL}/interviews/${id}/full`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                if (!response.ok) {
+                    // Fallback: try to load summary and some turns
+                    await loadInterviewParts(id);
+                    return;
+                }
+                
+                const data = await response.json();
+                renderInterview(data);
+                
+            } catch (error) {
+                console.error('Error loading interview:', error);
+                await loadInterviewParts(id);
+            }
+        }
+        
+        async function loadInterviewParts(id) {
+            try {
+                // Load summary
+                const summaryResponse = await fetch(`${API_URL}/interviews/${id}/turns/summary`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                const summaryData = await summaryResponse.json();
+                
+                // For now, just show what we have
+                renderBasicInterview(id, summaryData);
+                
+            } catch (error) {
+                showError('Failed to load interview: ' + error.message);
+            }
+        }
+        
+        function renderInterview(data) {
+            const content = document.getElementById('content');
+            
+            content.innerHTML = `
+                <div class="header">
+                    <h1>Interview ${data.id}</h1>
+                    <div class="metadata">
+                        <span>📅 ${data.metadata?.date || 'Date unknown'}</span>
+                        <span>📍 ${data.metadata?.location || 'Location unknown'}</span>
+                        <span>💬 ${data.turns?.length || 0} turns</span>
+                    </div>
+                </div>
+                
+                ${data.annotation?.summary ? `
+                    <div class="summary-section">
+                        <h2>Summary</h2>
+                        <p>${formatText(data.annotation.summary.overview || data.annotation.summary)}</p>
+                    </div>
+                ` : ''}
+                
+                ${data.annotation?.key_themes?.length ? `
+                    <div class="themes-section">
+                        <h2>Key Themes</h2>
+                        <div class="theme-list">
+                            ${data.annotation.key_themes.map(theme => 
+                                `<span class="theme-tag">${theme.theme || theme}</span>`
+                            ).join('')}
+                        </div>
+                    </div>
+                ` : ''}
+                
+                ${data.annotation?.notable_quotes?.length ? `
+                    <div class="quotes-section">
+                        <h2>Notable Quotes</h2>
+                        ${data.annotation.notable_quotes.map(quote => `
+                            <div class="quote">
+                                "${quote.text || quote}"
+                                <div class="quote-reference">— Turn ${quote.turn_reference || 'unknown'}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                ` : ''}
+                
+                ${data.annotation?.research_notes ? `
+                    <div class="notes-section">
+                        <h2>Research Notes</h2>
+                        <div class="note">${formatText(data.annotation.research_notes)}</div>
+                    </div>
+                ` : ''}
+                
+                ${data.turns?.length ? `
+                    <div class="turns-section">
+                        <h2>Conversation Turns</h2>
+                        ${data.turns.map((turn, index) => {
+                            // Extract turn number from turn_id (e.g., "062:01" -> "01")
+                            const turnNum = turn.turn_id ? turn.turn_id.split(':')[1] : String(index + 1);
+                            return `
+                            <div class="turn" id="turn-${turnNum}">
+                                <div class="turn-number">${index + 1}</div>
+                                <div class="speaker">${turn.speaker}</div>
+                                <div class="turn-text">${formatText(turn.text)}</div>
+                            </div>
+                        `}).join('')}
+                    </div>
+                ` : ''}
+            `;
+            
+            // Scroll to specific turn if provided
+            const turnId = urlParams.get('turn');
+            if (turnId) {
+                // Handle turn ranges (e.g., "1-5")
+                let targetTurn = turnId;
+                if (turnId.includes('-')) {
+                    targetTurn = turnId.split('-')[0]; // Scroll to start of range
+                }
+                
+                setTimeout(() => {
+                    // Try different ID formats
+                    let element = document.getElementById(`turn-${targetTurn}`);
+                    if (!element) {
+                        // Try with zero padding
+                        element = document.getElementById(`turn-${targetTurn.padStart(2, '0')}`);
+                    }
+                    if (!element) {
+                        // Try as 1-indexed
+                        element = document.getElementById(`turn-${parseInt(targetTurn)}`);
+                    }
+                    
+                    if (element) {
+                        // Highlight the turn(s)
+                        if (turnId.includes('-')) {
+                            // Highlight range
+                            const [start, end] = turnId.split('-').map(n => parseInt(n));
+                            for (let i = start; i <= end; i++) {
+                                const turnEl = document.getElementById(`turn-${i}`) || 
+                                              document.getElementById(`turn-${String(i).padStart(2, '0')}`);
+                                if (turnEl) {
+                                    turnEl.style.background = '#fff3cd';
+                                    turnEl.style.border = '2px solid #ffc107';
+                                    turnEl.style.marginBottom = '22px';
+                                }
+                            }
+                        } else {
+                            // Highlight single turn
+                            element.style.background = '#fff3cd';
+                            element.style.border = '2px solid #ffc107';
+                            element.style.marginBottom = '22px';
+                        }
+                        
+                        // Scroll to the element
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        
+                        // Add a fade effect after 10 seconds (increased from 3)
+                        setTimeout(() => {
+                            const highlightedElements = document.querySelectorAll('.turn[style*="background"]');
+                            highlightedElements.forEach(el => {
+                                el.style.transition = 'all 3s ease'; // Slower fade (increased from 2s)
+                                el.style.background = '#f8f9fa';
+                                el.style.border = 'none';
+                                el.style.marginBottom = '20px';
+                            });
+                        }, 10000); // Keep highlight for 10 seconds (increased from 3)
+                    }
+                }, 500); // Give more time for the page to render
+            }
+        }
+        
+        function renderBasicInterview(id, summaryData) {
+            const content = document.getElementById('content');
+            
+            content.innerHTML = `
+                <div class="header">
+                    <h1>Interview ${id}</h1>
+                    <div class="metadata">
+                        <span>📅 ${summaryData.metadata?.date || 'Date unknown'}</span>
+                        <span>📍 ${summaryData.metadata?.location || 'Location unknown'}</span>
+                    </div>
+                </div>
+                
+                <div class="summary-section">
+                    <h2>Summary</h2>
+                    <p>${formatText(summaryData.summary)}</p>
+                </div>
+                
+                <div class="turns-section">
+                    <p style="color: #666; text-align: center; padding: 40px;">
+                        Full interview transcript not available in this view.
+                    </p>
+                </div>
+            `;
+        }
+        
+        function formatText(text) {
+            if (!text) return '';
+            // Convert newlines to breaks and escape HTML
+            return text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/\n\n/g, '</p><p>')
+                .replace(/\n/g, '<br>');
+        }
+        
+        function showError(message) {
+            document.getElementById('content').innerHTML = `
+                <div class="error">
+                    <h2>Error</h2>
+                    <p>${message}</p>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

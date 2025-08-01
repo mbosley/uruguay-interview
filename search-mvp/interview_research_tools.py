@@ -11,7 +11,7 @@ INTERVIEW_RESEARCH_TOOLS = {
             "type": "function",
             "function": {
                 "name": "search_interviews",
-                "description": "Search for specific words/phrases across all 35 interviews. Returns theme matches, tag matches, and text excerpts. Best for: finding specific quotes, tracking how topics are discussed, discovering which interviews mention your topic. Pro tip: Search in Spanish for better results.",
+                "description": "Search for specific words/phrases across all 35 interviews. Multi-word searches find turns containing ANY of the words (OR search). Example: 'campo rural agricultura' finds turns with campo OR rural OR agricultura. Returns theme matches, tag matches, and text excerpts. If no results, provides helpful suggestions about which words were found/not found. Best for: finding specific quotes, tracking how topics are discussed, discovering which interviews mention your topic. Pro tip: Search in Spanish for better results.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -47,25 +47,6 @@ INTERVIEW_RESEARCH_TOOLS = {
         }
     },
     
-    "list_interview_themes": {
-        "command": "python src/cli/enriched_cli.py themes --summary",
-        "schema": {
-            "type": "function", 
-            "function": {
-                "name": "list_interview_themes",
-                "description": "Get complete list of all 121 themes across the corpus with occurrence counts. ALWAYS USE THIS EARLY to understand what citizens discuss. Reveals crisis patterns, priority themes, and unexpected topics. Essential for research planning.",
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "interview_id": {
-                            "type": "string",
-                            "description": "Optional: limit to specific interview (e.g. '072')"
-                        }
-                    }
-                }
-            }
-        }
-    },
     
     "get_corpus_stats": {
         "command": "python src/cli/enriched_cli.py stats",
@@ -73,7 +54,7 @@ INTERVIEW_RESEARCH_TOOLS = {
             "type": "function",
             "function": {
                 "name": "get_corpus_stats", 
-                "description": "Get corpus overview: 35 interviews, 5510 turns, 121 themes. Quick orientation to understand scope. Always start here.",
+                "description": "Get corpus overview with meta-theme categories. Shows: 35 interviews, 5510 turns, 121 themes organized into 17 meta-themes like 'Educational System Breakdown', 'Employment Crisis', etc. ALWAYS START HERE to see the thematic landscape.",
                 "parameters": {
                     "type": "object",
                     "properties": {}
@@ -119,22 +100,22 @@ INTERVIEW_RESEARCH_TOOLS = {
         }
     },
     
-    "search_themes": {
-        "command": "python src/cli/enriched_cli.py themes --summary --filter {keyword}",
+    "explore_meta_theme": {
+        "command": "python src/cli/enriched_cli.py themes --summary --meta-theme {meta_theme}",
         "schema": {
             "type": "function",
             "function": {
-                "name": "search_themes", 
-                "description": "Search for themes containing specific keywords. Returns matching themes with their prevalence.",
+                "name": "explore_meta_theme", 
+                "description": "Deep dive into a specific meta-theme category. Shows all themes within that category with turn counts and interview locations. IMPORTANT: Use the exact key from corpus stats (with underscores), not the display name. Examples: 'security_and_drugs' (NOT 'Security Crisis and Drug Proliferation'), 'education_system_failure', 'healthcare_access', 'employment_crisis'.",
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "keyword": {
+                        "meta_theme": {
                             "type": "string",
-                            "description": "Keyword to search for in theme names (e.g. 'education', 'health', 'rural')"
+                            "description": "Meta-theme key from corpus stats. Use underscores, not spaces. Examples: security_and_drugs, education_system_failure, healthcare_access, employment_crisis, rural_urban_disparity"
                         }
                     },
-                    "required": ["keyword"]
+                    "required": ["meta_theme"]
                 }
             }
         }
@@ -166,6 +147,31 @@ INTERVIEW_RESEARCH_TOOLS = {
                         }
                     },
                     "required": ["question", "context"]
+                }
+            }
+        }
+    },
+    
+    "complete_research": {
+        "command": "echo 'RESEARCH_COMPLETE'",
+        "schema": {
+            "type": "function",
+            "function": {
+                "name": "complete_research",
+                "description": "End the research phase when you have sufficient evidence to provide a comprehensive answer. Use this when: 1) You have explored the key themes and gathered enough citations, 2) You have evidence from multiple interviews representing different perspectives, 3) You can confidently answer the research question with the data collected. Include a brief summary of what you've accomplished.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "summary": {
+                            "type": "string",
+                            "description": "Brief summary of research accomplished, key themes explored, and why you believe sufficient evidence has been gathered. Should justify the decision to complete research early."
+                        },
+                        "evidence_count": {
+                            "type": "integer",
+                            "description": "Number of interviews or key pieces of evidence collected that support your findings"
+                        }
+                    },
+                    "required": ["summary", "evidence_count"]
                 }
             }
         }
