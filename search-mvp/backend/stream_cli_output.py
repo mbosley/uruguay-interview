@@ -15,8 +15,8 @@ import os
 from datetime import datetime
 
 # Add parent directory to path to import corpus loader
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from web_demo.corpus_loader import load_enriched_corpus
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from archived.web_demo.corpus_loader import load_enriched_corpus
 
 app = FastAPI()
 

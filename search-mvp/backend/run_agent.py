@@ -5,6 +5,14 @@ Simple wrapper to run the research agent from command line
 
 import sys
 import asyncio
+import os
+
+# Change to parent directory so relative paths work
+os.chdir(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
+# Add parent directory to path
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from src.agent.research_agent import InterviewResearchAgent
 from src.agent.config import AgentConfig
 
