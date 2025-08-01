@@ -14,6 +14,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 from interview_research_tools import INTERVIEW_RESEARCH_TOOLS
 from config.providers import get_provider_config
 from .logger import AgentLogger
+from .web_logger import WebLogger
 from .events import EventHandler
 from .tools import ToolExecutor
 from .report_generator import ReportGenerator
@@ -40,9 +41,19 @@ class InterviewResearchAgent:
         self.model = config.model or self.provider_config.model_name
         
         # Initialize components
-        self.logger = AgentLogger(research_mode=self.research_mode, debug=self.debug, max_width=config.width)
         self.event_handler = EventHandler()
         self.event_handler.set_session_id(self.session_id)
+        
+        # Use WebLogger if web_mode is enabled
+        if hasattr(config, 'web_mode') and config.web_mode:
+            self.logger = WebLogger(
+                event_handler=self.event_handler,
+                research_mode=self.research_mode,
+                debug=self.debug,
+                max_width=config.width
+            )
+        else:
+            self.logger = AgentLogger(research_mode=self.research_mode, debug=self.debug, max_width=config.width)
         self.tool_executor = ToolExecutor(self.session_id, self.logger)
         self.report_generator = ReportGenerator(self.logger, max_width=config.width)
         
@@ -206,7 +217,7 @@ class InterviewResearchAgent:
                     })
                     
                     # Execute tools
-                    await self._execute_tool_calls(
+                    should_complete = await self._execute_tool_calls(
                         message.tool_calls,
                         messages,
                         tool_call_log,
@@ -215,6 +226,11 @@ class InterviewResearchAgent:
                     
                     iteration += 1
                     self.stats['iterations'] = iteration
+                    
+                    # Check if agent requested early completion
+                    if should_complete:
+                        self.logger.info("🏁 Research completed early per agent request")
+                        break
                     
                     # Add context about remaining iterations
                     remaining_iterations = max_iterations - iteration
@@ -319,16 +335,27 @@ class InterviewResearchAgent:
         final_messages: List[Dict[str, Any]],
         tool_call_log: List[Dict[str, Any]],
         iteration: int
-    ):
-        """Execute tool calls and handle results"""
-        # Separate spawn_sub_agent calls from other tools
+    ) -> bool:
+        """Execute tool calls and handle results
+        
+        Returns:
+            bool: True if research should be completed early, False to continue
+        """
+        # Check for early completion request
+        completion_requested = False
+        
+        # Separate spawn_sub_agent and complete_research calls from other tools
         spawn_calls = []
+        completion_calls = []
         other_calls = []
         
         for tool_call in tool_calls:
             tool_name = tool_call.function.name
             if tool_name == "spawn_sub_agent":
                 spawn_calls.append(tool_call)
+            elif tool_name == "complete_research":
+                completion_calls.append(tool_call)
+                completion_requested = True
             else:
                 other_calls.append(tool_call)
         
@@ -457,6 +484,82 @@ class InterviewResearchAgent:
                 })
         
         # Execute spawn_sub_agent calls in parallel
+        # Handle completion calls
+        for tool_call in completion_calls:
+            try:
+                tool_name = tool_call.function.name
+                tool_args_str = tool_call.function.arguments
+                
+                # Parse arguments
+                try:
+                    tool_args = json.loads(tool_args_str) if tool_args_str else {}
+                except json.JSONDecodeError:
+                    tool_args = {}
+                
+                self.logger.tool_call(tool_name, tool_args)
+                
+                # Extract completion details
+                summary = tool_args.get("summary", "Research completed")
+                evidence_count = tool_args.get("evidence_count", 0)
+                
+                completion_msg = f"✅ Research completed early by agent request.\n\nSummary: {summary}\nEvidence collected: {evidence_count} interviews/sources"
+                
+                # Log the completion with proper formatting
+                self.logger.info("\n" + "═"*self.logger.max_width)
+                self.logger.info("🏁 EARLY COMPLETION REQUESTED")
+                self.logger.info("═"*self.logger.max_width)
+                
+                # Wrap the summary text properly
+                summary_wrapped = self.logger._wrap_text(f"📋 Summary: {summary}")
+                self.logger.info(summary_wrapped)
+                self.logger.info(f"\n📊 Evidence collected: {evidence_count} interviews/sources")
+                self.logger.info("═"*self.logger.max_width)
+                
+                # Emit completion event
+                await self.emit_event("tool_call", {
+                    "tool": tool_name,
+                    "args": tool_args,
+                    "id": tool_call.id
+                }, iteration)
+                
+                # Emit special early completion event
+                await self.emit_event("early_completion", {
+                    "summary": summary,
+                    "evidence_count": evidence_count,
+                    "iteration": iteration
+                }, iteration)
+                
+                # Add tool response to conversation
+                final_messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": completion_msg
+                })
+                
+                # Log tool call
+                tool_call_log.append({
+                    "tool": tool_name,
+                    "args": tool_args,
+                    "result": completion_msg,
+                    "result_length": len(completion_msg),
+                    "timestamp": datetime.now().isoformat()
+                })
+                
+                self.stats['tool_calls'] += 1
+                
+            except Exception as e:
+                # Handle completion call errors
+                error_msg = f"Error processing completion request: {str(e)}"
+                self.logger.error(error_msg)
+                
+                # Add error response to conversation
+                final_messages.append({
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": json.dumps({"error": error_msg})
+                })
+        
+        # Execute spawn calls last (if any)
         if spawn_calls:
             await self._execute_spawn_calls(
                 spawn_calls,
@@ -464,6 +567,9 @@ class InterviewResearchAgent:
                 tool_call_log,
                 iteration
             )
+        
+        # Return completion flag
+        return completion_requested
     
     async def _execute_spawn_calls(
         self,
@@ -1054,7 +1160,7 @@ class InterviewResearchAgent:
     def _log_statistics(self):
         """Log research statistics"""
         duration = datetime.now() - self.stats['start_time']
-        self.logger.info(f"\n━" * self.logger.max_width)
+        self.logger.info("\n" + "━" * self.logger.max_width)
         self.logger.info(f"📊 RESEARCH STATISTICS")
         self.logger.info("━" * self.logger.max_width)
         self.logger.info(f"⏱️  Duration: {duration.seconds}s")

@@ -32,7 +32,8 @@ class AgentConfig:
         parent_id: Optional[str] = None,
         max_depth: int = 2,
         enable_sub_agents: bool = False,  # Disabled by default
-        session_id: Optional[str] = None
+        session_id: Optional[str] = None,
+        web_mode: bool = False  # Enable web logger for console output events
     ):
         self.provider = provider
         self.model = model
@@ -46,6 +47,7 @@ class AgentConfig:
         self.max_depth = max_depth
         self.enable_sub_agents = enable_sub_agents
         self.session_id = session_id or get_session_id()
+        self.web_mode = web_mode
         
     @classmethod
     def from_args(cls, args):

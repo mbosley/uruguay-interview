@@ -79,8 +79,16 @@ class InterviewSearchEngine:
         return None
     
     def search(self, query: str, in_interview: str = None, 
-               speaker: str = None, limit: int = 20) -> List[Dict]:
-        """Search for text across all turns"""
+               speaker: str = None, limit: int = 20, mode: str = "any") -> List[Dict]:
+        """Search for text across all turns
+        
+        Args:
+            query: Search terms (multiple words supported)
+            in_interview: Filter to specific interview ID
+            speaker: Filter to specific speaker
+            limit: Maximum results to return
+            mode: "any" (OR search - default) or "all" (AND search)
+        """
         if not self.loaded:
             raise RuntimeError("Corpus not loaded. Call load_corpus() first.")
         
@@ -90,14 +98,22 @@ class InterviewSearchEngine:
         if not query_words:
             return []
         
-        # Find turns containing all query words
-        matching_turns = None
-        for word in query_words:
-            word_matches = self.text_index.get(word, set())
-            if matching_turns is None:
-                matching_turns = word_matches.copy()
-            else:
-                matching_turns &= word_matches
+        # Find turns based on search mode
+        if mode == "all":
+            # AND search - turns must contain ALL query words
+            matching_turns = None
+            for word in query_words:
+                word_matches = self.text_index.get(word, set())
+                if matching_turns is None:
+                    matching_turns = word_matches.copy()
+                else:
+                    matching_turns &= word_matches
+        else:
+            # OR search (default) - turns containing ANY query word
+            matching_turns = set()
+            for word in query_words:
+                word_matches = self.text_index.get(word, set())
+                matching_turns |= word_matches
         
         if not matching_turns:
             return []
@@ -165,6 +181,62 @@ class InterviewSearchEngine:
         ))
         
         return sorted_turns[:limit]
+    
+    def get_search_suggestions(self, query: str) -> Dict[str, Any]:
+        """Provide search suggestions when no results are found"""
+        query_words = re.findall(r'\b\w+\b', query.lower())
+        suggestions = {
+            "original_query": query,
+            "query_words": query_words,
+            "word_frequencies": {},
+            "suggestions": []
+        }
+        
+        # Check frequency of each word
+        for word in query_words:
+            count = len(self.text_index.get(word, set()))
+            suggestions["word_frequencies"][word] = count
+            
+        # Generate suggestions based on word frequencies
+        if all(count == 0 for count in suggestions["word_frequencies"].values()):
+            suggestions["suggestions"].extend([
+                "All search terms returned no matches",
+                "Try searching in Spanish (citizens spoke Spanish)",
+                "Check spelling, especially Spanish accents",
+                "Try single words instead of phrases"
+            ])
+        elif all(count > 0 for count in suggestions["word_frequencies"].values()):
+            # All words exist but not together
+            suggestions["suggestions"].extend([
+                f"Words exist separately but not together in any turn",
+                f"Try searching for each word individually",
+                f"Consider using related or broader terms"
+            ])
+            # Show which words are most/least common
+            sorted_words = sorted(suggestions["word_frequencies"].items(), 
+                                key=lambda x: x[1], reverse=True)
+            suggestions["suggestions"].append(
+                f"Most common: '{sorted_words[0][0]}' ({sorted_words[0][1]} turns)"
+            )
+            if len(sorted_words) > 1:
+                suggestions["suggestions"].append(
+                    f"Least common: '{sorted_words[-1][0]}' ({sorted_words[-1][1]} turns)"
+                )
+        else:
+            # Some words found, some not
+            found = [w for w, c in suggestions["word_frequencies"].items() if c > 0]
+            not_found = [w for w, c in suggestions["word_frequencies"].items() if c == 0]
+            suggestions["suggestions"].append(
+                f"Found: {', '.join(found)}"
+            )
+            suggestions["suggestions"].append(
+                f"Not found: {', '.join(not_found)}"
+            )
+            suggestions["suggestions"].append(
+                "Try searching just for the found words"
+            )
+            
+        return suggestions
     
     def get_stats(self) -> Dict:
         """Get corpus statistics"""

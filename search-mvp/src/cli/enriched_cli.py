@@ -8,6 +8,9 @@ import re
 import argparse
 from pathlib import Path
 from typing import Dict, List, Optional, Union
+import sys
+sys.path.insert(0, str(Path(__file__).parent.parent))
+from search.simple_search import InterviewSearchEngine
 
 class EnrichedUruguayCLI:
     def __init__(self):
@@ -18,6 +21,17 @@ class EnrichedUruguayCLI:
         self.theme_consolidation = None
         self._scan_interviews()
         self._load_theme_consolidation()
+        
+        # Initialize search engine for improved search
+        self.search_engine = None
+        try:
+            self.search_engine = InterviewSearchEngine()
+            corpus_path = project_root / "data" / "processed" / "structured" / "_corpus.json"
+            if corpus_path.exists():
+                self.search_engine.load_corpus(corpus_path)
+        except Exception:
+            # Fall back to old search if engine not available
+            pass
     
     def _scan_interviews(self):
         """Scan for available enriched interview files"""
@@ -230,6 +244,51 @@ class EnrichedUruguayCLI:
     
     def search(self, query: str, interview_id: Optional[str] = None, aggregate: bool = True) -> Dict:
         """Search through enriched interviews"""
+        # Try to use the improved search engine first
+        if self.search_engine and self.search_engine.loaded and not interview_id:
+            try:
+                # Use the new OR-based search
+                search_results = self.search_engine.search(query, limit=100)
+                
+                if not search_results:
+                    # Get search suggestions
+                    suggestions = self.search_engine.get_search_suggestions(query)
+                    return {
+                        "type": "search_results",
+                        "query": query,
+                        "total_results": 0,
+                        "results": [],
+                        "search_suggestions": suggestions
+                    }
+                
+                # Convert to our format
+                results = []
+                for turn in search_results:
+                    results.append({
+                        "type": "turn_text_match",
+                        "interview_id": turn['interview_id'],
+                        "turn_id": turn['turn_id'],
+                        "speaker": turn['speaker'],
+                        "text": turn['text'],
+                        "interview_location": turn.get('interview_location', 'Unknown')
+                    })
+                
+                # If aggregate is True and we have many results, return aggregated view
+                if aggregate and len(results) > 20:
+                    return self._aggregate_search_results(query, results)
+                
+                return {
+                    "type": "search_results",
+                    "query": query,
+                    "total_results": len(results),
+                    "results": results[:50]  # Limit to 50 results
+                }
+                
+            except Exception:
+                # Fall back to old search method
+                pass
+        
+        # Original search implementation
         results = []
         
         # Determine which interviews to search

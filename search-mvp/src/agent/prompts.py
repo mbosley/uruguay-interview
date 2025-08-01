@@ -18,10 +18,14 @@ Available tools:
   rural_urban_disparity, social_exclusion, economic_sector_collapse, poverty_and_inequality,
   tourism_potential, environmental_crisis
 - search_interviews: Find mentions of specific terms across all interviews
+  DEFAULT: Searches for turns containing ANY of the words (OR search)
+  Multi-word queries like "campo rural agricultura" find turns with campo OR rural OR agricultura
+  If no results, the tool provides helpful suggestions about word frequencies
 - get_interview_turn: Read specific interview turns or summaries  
 - scratchpad_append: Take notes on your findings
 - scratchpad_read: Review your notes
 - spawn_sub_agent: Delegate focused sub-questions
+- complete_research: End research early when you have sufficient evidence to answer the question
 
 🎯 RESEARCH METHODOLOGY:
 
@@ -62,12 +66,12 @@ scratchpad_append("RESEARCH PLAN for 'How do citizens view education?':
 
 BREADTH TRACKING EXAMPLE:
 scratchpad_append("BREADTH ASSESSMENT:
-- 'economía': 15 interviews (064, 068, 088...)
-- 'empleo': 18 interviews (063, 064, 076...)
+- 'economía': 15 interviews [[064:summary]] [[068:summary]] [[088:summary]]...
+- 'empleo': 18 interviews [[063:summary]] [[064:summary]] [[076:summary]]...
 - 'trabajo': 22 interviews (overlaps with empleo)
 - Total unique: 24 of 35 interviews discuss economic themes
 - Rural concentration: 16/18 rural interviews vs 8/17 urban
-- Key voices: cooperatives (063), teachers (068), dairy leaders (088)")
+- Key voices: cooperatives [[063:summary]], teachers [[068:summary]], dairy leaders [[088:summary]]")
 
 🔍 PHASE 4: TARGETED EXPLORATION (Scale to your iteration budget)
 - {'QUICK: 1-2 searches, 2-3 key interview excerpts maximum' if max_iterations <= 5 else 'THOROUGH: Multiple searches, 4-6 interviews, key quotes' if max_iterations <= 10 else 'DEEP: Exhaustive searches, follow all leads, examine contradictions'}
@@ -78,13 +82,15 @@ scratchpad_append("BREADTH ASSESSMENT:
 EXAMPLE TOOL CHAINING:
 Step 1: get_interview_turn("071:") 
 → Notice mentions waiting times, rural perspective
-Step 2: search_interviews("lista de espera")
-→ Find 15 mentions across interviews, note which ones
-Step 3: get_interview_turn("084:45-50")
+Step 2: search_interviews("lista espera")
+→ Find 43 mentions (OR search: lista OR espera), many relevant
+Step 3: search_interviews("turno demora espera")
+→ Cast wider net with synonyms, find 89 mentions total
+Step 4: get_interview_turn("084:45-50")
 → Extract specific quote about 6-month wait
-Step 4: scratchpad_append("Pattern confirmed: waiting times mentioned in 071:23 (3 months), 084:47 (6 months), 089:12 (hasta un año). Rural areas consistently report longer waits.")
-Step 5: search_interviews("especialista")
-→ Look for specialist access issues
+Step 5: scratchpad_append("Pattern confirmed: waiting times mentioned in [[071:23]] (3 months), [[084:47]] (6 months), [[089:12]] (hasta un año). Rural areas consistently report longer waits.")
+Step 6: search_interviews("especialista médico doctor")
+→ Look for specialist access issues with multiple terms
 Continue building evidence chains...
 
 🔄 PHASE 5: ITERATION (Refine based on findings)
@@ -92,6 +98,26 @@ Continue building evidence chains...
 - {'Monitor your remaining iterations carefully' if max_iterations <= 10 else 'Identify gaps or new directions'}
 - Make a new mini-plan and explore further
 - Connect findings across interviews
+
+🏁 WHEN TO COMPLETE RESEARCH:
+Use `complete_research` when you have:
+✅ **Sufficient evidence**: 3+ interviews with strong citations supporting your findings
+✅ **Multiple perspectives**: Rural/urban, different demographics, or contrasting viewpoints explored  
+✅ **Clear patterns**: You can identify consistent themes and explain variations
+✅ **Answerable research question**: You have enough evidence to provide a comprehensive response
+✅ **Quality over quantity**: Better to complete with solid evidence than exhaust all iterations
+
+COMPLETE EARLY if you find:
+- Strong consensus across multiple interviews (6+ supporting citations)
+- Clear geographic or demographic patterns with evidence from both groups
+- Comprehensive exploration of the main themes relevant to your question
+- Diminishing returns (new searches not adding significant insights)
+
+DON'T COMPLETE if you have:
+❌ Only 1-2 interviews explored
+❌ Major contradictions that need investigation  
+❌ Obvious gaps in perspective (e.g., only urban views on rural issues)
+❌ Research question still unclear or partially answered
 
 EXAMPLE MID-RESEARCH REPLANNING:
 scratchpad_append("CHECKPOINT: After analyzing 5 healthcare interviews, I'm seeing an unexpected pattern - it's not just about wait times, but about healthcare workers leaving rural areas. This wasn't in my original plan but seems crucial.
@@ -129,7 +155,14 @@ Write naturally in your scratchpad - think out loud! Include:
 - Contradictions ("Interview 071 says X, but 089 suggests opposite...")
 - Methodological notes ("Need to search for Y to confirm pattern...")
 
-ALWAYS include citations (INTERVIEW:TURN format) but write conversationally.
+ALWAYS include citations using double brackets [[INTERVIEW:TURN]] format but write conversationally.
+
+CRITICAL CITATION FORMAT: 
+- ALWAYS use double brackets: [[070:125]], [[064:119]], [[085:16]]
+- NEVER use parentheses: (070:125) is WRONG
+- For summaries: [[070:summary]]
+- For ranges: [[070:125-127]]
+- Multiple citations: [[070:125]] [[064:119]] [[085:16]] (space-separated)
 
 EXAMPLE SCRATCHPAD ENTRIES:
 
@@ -161,9 +194,9 @@ How does this affect policy responses?"
 [Synthesis moment]
 "After 15 interviews on education, the word that keeps appearing is 'abandono' 
 (abandonment). Not failure, not challenge - ABANDONMENT. Teachers feel abandoned 
-by the state (068:89), rural communities feel abandoned by teachers who leave 
-(064:156), and students feel abandoned by a system that doesn't prepare them for 
-work (071:203). 
+by the state [[068:89]], rural communities feel abandoned by teachers who leave 
+[[064:156]], and students feel abandoned by a system that doesn't prepare them for 
+work [[071:203]]. 
 
 It's a cascade of abandonment. The emotional weight of this language suggests deep 
 institutional breakdown, not just resource constraints. Citizens aren't asking for 
@@ -210,7 +243,7 @@ Research Question: "How do citizens view government response to their needs?"
 6. scratchpad_append("Found concrete example in 071:36 - rural clinic closed 2 years ago, nearest now 50km away. This isn't abstract 'abandonment' but literal withdrawal of services. Pattern emerging: abandonment = service withdrawal, not just neglect.")
 7. search_interviews("programa social") → Looking for positive examples
 8. get_interview_turn("089:") → Found mention of successful food program
-9. scratchpad_append("Interesting contrast! 089 mentions INDA food program positively (089:78). But even here, citizen says 'es lo único que funciona' (it's the only thing that works). Success stories exist but are seen as exceptions proving the rule.")
+9. scratchpad_append("Interesting contrast! 089 mentions INDA food program positively [[089:78]]. But even here, citizen says 'es lo único que funciona' (it's the only thing that works). Success stories exist but are seen as exceptions proving the rule.")
 10. scratchpad_read() → Review findings so far
 11. scratchpad_append("NEW DIRECTION: The 'only thing that works' comment suggests citizens might judge government by consistency, not just presence. Need to explore reliability/predictability of services. Adjusting plan to search for mentions of intermittent services or broken promises.")
 Continue iterating...
@@ -231,13 +264,14 @@ Good sequence for understanding scope before diving deep:
 🌟 PATTERN 2: FOLLOWING UNEXPECTED THREADS
 Good example of pivoting based on discoveries:
 
-1. search_interviews("educación rural") → Starting with expected focus
-2. get_interview_turn("068:45-50") → Teacher mentions "exodus" of educators
-3. scratchpad_append("UNEXPECTED: Was looking for curriculum issues but teacher in 068:47 says 'no hay maestros que quieran venir' (no teachers want to come). This isn't about education quality but workforce crisis. Need to pivot.")
-4. search_interviews("maestros se van") → Following the new thread
-5. search_interviews("faltan docentes") → Different phrasing
-6. scratchpad_append("WORKFORCE CRISIS CONFIRMED: 5 different interviews mention teacher shortage. But here's what's interesting - it's not just quantity but experience: 068:89 mentions 'solo quedan los recién recibidos' (only newly graduated remain). Brain drain pattern?")
-7. spawn_sub_agent("Analyze the rural professional exodus pattern across sectors", "Found teacher shortage is part of broader pattern. Need to investigate if doctors, nurses, other professionals also leaving rural areas.")
+1. search_interviews("educación rural") → Starting with broad search (finds educación OR rural)
+2. scratchpad_append("Got 156 results - many about rural issues beyond education. Let me narrow down.")
+3. search_interviews("maestros") → More focused search on teachers
+4. get_interview_turn("068:45-50") → Teacher mentions "exodus" of educators
+5. scratchpad_append("UNEXPECTED: Was looking for curriculum issues but teacher in 068:47 says 'no hay maestros que quieran venir' (no teachers want to come). This isn't about education quality but workforce crisis. Need to pivot.")
+6. search_interviews("maestros docentes profesores") → Casting wider net with synonyms
+7. scratchpad_append("WORKFORCE CRISIS CONFIRMED: Using multiple teacher-related terms found 45 mentions across 12 interviews. Pattern emerging: rural teacher shortage is widespread.")
+8. spawn_sub_agent("Analyze the rural professional exodus pattern across sectors", "Found teacher shortage is part of broader pattern. Need to investigate if doctors, nurses, other professionals also leaving rural areas.")
 
 🌟 PATTERN 3: BUILDING EVIDENCE CHAINS
 Good example of systematic evidence accumulation:
@@ -248,7 +282,7 @@ Good example of systematic evidence accumulation:
 4. get_interview_turn("071:23") → Get exact quote about wait times
 5. get_interview_turn("084:47") → Cross-reference another mention
 6. get_interview_turn("089:12") → Third data point
-7. scratchpad_append("EVIDENCE CHAIN on specialist access: 071:23: '3 months for cardiologist' | 084:47: '6 months unless you pay' | 089:12: 'up to a year for neurologist.' Clear pattern of increasing waits, with paid option as escape valve. This two-tier system needs exploring.")
+7. scratchpad_append("EVIDENCE CHAIN on specialist access: [[071:23]]: '3 months for cardiologist' | [[084:47]]: '6 months unless you pay' | [[089:12]]: 'up to a year for neurologist.' Clear pattern of increasing waits, with paid option as escape valve. This two-tier system needs exploring.")
 8. search_interviews("pagar consulta") → Investigate private option
 
 🌟 PATTERN 4: COMPARATIVE ANALYSIS
@@ -271,6 +305,16 @@ Good example of tracking change over time:
 4. get_interview_turn("070:34") → "before you could walk at night"
 5. get_interview_turn("068:89") → "before teachers stayed their whole career"
 6. scratchpad_append("TIMELINE EMERGING: Multiple citizens pinpoint changes to 'last 5-10 years' with special emphasis on 'último quinquenio' (last 5-year term). Drug arrival → violence increase → professional exodus → service collapse. It's a cascade, not isolated problems.")
+
+🌟 PATTERN 6: HANDLING NO RESULTS WITH SMART PIVOTING
+Good example of using search suggestions to refine strategy:
+
+1. search_interviews("transporte público urbano") → Looking for urban transport issues
+2. scratchpad_append("NO RESULTS but suggestions show: 'transporte' found in 23 turns, 'público' in 67 turns, 'urbano' not found. Interesting - 'urbano' might not be the term citizens use.")
+3. search_interviews("transporte ciudad") → Trying 'ciudad' instead of 'urbano'
+4. scratchpad_append("Better! 12 results. Citizens use 'ciudad' not 'urbano'. Learning the local vocabulary.")
+5. search_interviews("ómnibus colectivo") → Using local transport terms
+6. scratchpad_append("JACKPOT: 45 results. 'Ómnibus' is the key term here, not 'transporte público'.")
 
 KEY PRINCIPLES IN THESE GOOD EXAMPLES:
 ✓ Always explain WHY you're making each search
@@ -315,6 +359,9 @@ SEARCH TIPS:
 - Search for emotion words: "abandono", "crisis", "esperanza"
 - Look for temporal markers: "antes", "ahora", "últimos años"
 - Search for actors: "intendente", "gobierno", "vecinos"
+- Multi-word searches find ANY word by default: "campo rural" finds campo OR rural
+- If no results, try individual words: instead of "campo rural agricultura", try "campo", "rural", "agricultura" separately
+- The tool will suggest which words were found/not found to guide your next search
 
 Remember: Quality over quantity. It's better to deeply explore 5-6 relevant interviews than to skim 20. Build evidence chains by connecting multiple turns and interviews. When you have sufficient evidence and insights, provide a summary with specific citations."""
 
@@ -400,14 +447,14 @@ Each paragraph should have 3-5 citations minimum using [[interview:turn]] format
 
 #### 2.1.2 Evidence and Testimonies
 [3-4 direct quotes or paraphrased testimonies, each with context]
-- "Direct quote showing citizen perspective" (071:23) - [Rural teacher, Los Arrayanes]
-- Citizens in Fray Bentos report that [paraphrased concern] (065:45; 065:47; 065:52)
-- Multiple interviews highlight [pattern] (068:12; 071:34; 084:67; 089:23; 091:45)
+- "Direct quote showing citizen perspective" [[071:23]] - [Rural teacher, Los Arrayanes]
+- Citizens in Fray Bentos report that [paraphrased concern] [[065:45]] [[065:47]] [[065:52]]
+- Multiple interviews highlight [pattern] [[068:12]] [[071:34]] [[084:67]] [[089:23]] [[091:45]]
 
 #### 2.1.3 Sub-themes and Variations
 [Identify 2-3 sub-themes with citations]
-- Sub-theme 1: [Description] (064:23; 068:45; 071:12)
-- Sub-theme 2: [Description] (076:34; 078:56; 080:78)
+- Sub-theme 1: [Description] [[064:23]] [[068:45]] [[071:12]]
+- Sub-theme 2: [Description] [[076:34]] [[078:56]] [[080:78]]
 
 #### 2.1.4 Policy Implications
 [1 paragraph on what this theme suggests for policy, grounded in citizen suggestions]

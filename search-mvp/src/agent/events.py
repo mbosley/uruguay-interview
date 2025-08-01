@@ -41,8 +41,9 @@ class EventHandler:
             if iteration is not None:
                 event["iteration"] = iteration
             
-            # Publish event to store
-            event_store.publish(self.session_id, event)
+            # Publish event to store with job: prefix for API compatibility
+            channel = f"job:{self.session_id}"
+            event_store.publish(channel, event)
             
             # Force yield to allow SSE to process events immediately
             await asyncio.sleep(0)

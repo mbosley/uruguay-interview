@@ -11,7 +11,7 @@ INTERVIEW_RESEARCH_TOOLS = {
             "type": "function",
             "function": {
                 "name": "search_interviews",
-                "description": "Search for specific words/phrases across all 35 interviews. Returns theme matches, tag matches, and text excerpts. Best for: finding specific quotes, tracking how topics are discussed, discovering which interviews mention your topic. Pro tip: Search in Spanish for better results.",
+                "description": "Search for specific words/phrases across all 35 interviews. Multi-word searches find turns containing ANY of the words (OR search). Example: 'campo rural agricultura' finds turns with campo OR rural OR agricultura. Returns theme matches, tag matches, and text excerpts. If no results, provides helpful suggestions about which words were found/not found. Best for: finding specific quotes, tracking how topics are discussed, discovering which interviews mention your topic. Pro tip: Search in Spanish for better results.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -147,6 +147,31 @@ INTERVIEW_RESEARCH_TOOLS = {
                         }
                     },
                     "required": ["question", "context"]
+                }
+            }
+        }
+    },
+    
+    "complete_research": {
+        "command": "echo 'RESEARCH_COMPLETE'",
+        "schema": {
+            "type": "function",
+            "function": {
+                "name": "complete_research",
+                "description": "End the research phase when you have sufficient evidence to provide a comprehensive answer. Use this when: 1) You have explored the key themes and gathered enough citations, 2) You have evidence from multiple interviews representing different perspectives, 3) You can confidently answer the research question with the data collected. Include a brief summary of what you've accomplished.",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "summary": {
+                            "type": "string",
+                            "description": "Brief summary of research accomplished, key themes explored, and why you believe sufficient evidence has been gathered. Should justify the decision to complete research early."
+                        },
+                        "evidence_count": {
+                            "type": "integer",
+                            "description": "Number of interviews or key pieces of evidence collected that support your findings"
+                        }
+                    },
+                    "required": ["summary", "evidence_count"]
                 }
             }
         }

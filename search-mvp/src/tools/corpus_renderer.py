@@ -268,7 +268,9 @@ class CorpusRenderer:
                     
                     lines.append(f"\n{i}. Interview {interview_id} ({match_count} matches)")
                     if sample_turns:
-                        lines.append(f"   Sample turns: {', '.join(sample_turns)}")
+                        # Format sample turns with double brackets for hyperlinking
+                        formatted_turns = ', '.join([f"[[{turn}]]" for turn in sample_turns])
+                        lines.append(f"   Sample turns: {formatted_turns}")
         
         return "\n".join(lines)
     
@@ -285,11 +287,31 @@ class CorpusRenderer:
         
         if total_results == 0:
             lines.append(f"\n❌ No matches found")
-            lines.append("\n💡 Search tips:")
-            lines.append("  • Try broader terms or synonyms")
-            lines.append("  • Check Spanish spelling (e.g., 'abandonó' not 'abandono')")
-            lines.append("  • Use partial phrases instead of exact quotes")
-            lines.append("  • Search in Spanish - citizens spoke in Spanish")
+            
+            # Check if we have search suggestions
+            suggestions = data.get('search_suggestions', {})
+            if suggestions:
+                word_freq = suggestions.get('word_frequencies', {})
+                if word_freq:
+                    lines.append(f"\n📊 Word analysis:")
+                    for word, count in word_freq.items():
+                        if count > 0:
+                            lines.append(f"  • '{word}': found in {count} turns")
+                        else:
+                            lines.append(f"  • '{word}': not found")
+                
+                custom_suggestions = suggestions.get('suggestions', [])
+                if custom_suggestions:
+                    lines.append("\n💡 Search suggestions:")
+                    for suggestion in custom_suggestions:
+                        lines.append(f"  • {suggestion}")
+            else:
+                # Fallback to generic tips
+                lines.append("\n💡 Search tips:")
+                lines.append("  • Try broader terms or synonyms")
+                lines.append("  • Check Spanish spelling (e.g., 'abandonó' not 'abandono')")
+                lines.append("  • Use partial phrases instead of exact quotes")
+                lines.append("  • Search in Spanish - citizens spoke in Spanish")
         else:
             lines.append(f"\n📊 Found {total_results} matches")
             

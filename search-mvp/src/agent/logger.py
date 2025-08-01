@@ -199,13 +199,19 @@ class AgentLogger:
             return
         
         # Special handling for rendered outputs - show full content
-        if result and (
-            (tool_name == "get_interview_turn" and "INTERVIEW" in str(result) and ("SUMMARY" in str(result) or "TURN" in str(result))) or
-            (tool_name == "get_corpus_stats" and "CORPUS STATISTICS" in str(result)) or
-            (tool_name == "explore_meta_theme" and ("Total themes:" in str(result) or "Exploring:" in str(result))) or
-            (tool_name == "search_interviews" and "SEARCH RESULTS" in str(result)) or
-            (tool_name == "search_themes" and ("THEME SEARCH RESULTS" in str(result) or "Total themes:" in str(result)))
-        ):
+        # Check if the result appears to be formatted output
+        is_formatted = False
+        if result:
+            result_str = str(result)
+            # Check for common formatted output indicators
+            formatted_indicators = [
+                "📊", "🔍", "🎯", "📚", "💬", "📈",  # Emojis used in formatting
+                "CORPUS STATISTICS", "INTERVIEW THEMES", "SEARCH RESULTS",  # Headers
+                "INTERVIEW", "TURN", "SUMMARY"  # Interview formatting
+            ]
+            is_formatted = any(indicator in result_str for indicator in formatted_indicators)
+        
+        if is_formatted:
             self.logger.info(f"✅ {size_str}")
             # Show the full rendered output on new lines
             self.logger.info(result)

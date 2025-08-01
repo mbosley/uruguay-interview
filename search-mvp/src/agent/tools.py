@@ -90,10 +90,21 @@ class ToolExecutor:
                 
                 # Apply rendering for different tool types
                 rendered = output  # Default to raw output
-                if tool_name in ["get_interview_turn"]:
-                    rendered = self.interview_renderer.render(output)
-                elif tool_name in ["get_corpus_stats", "explore_meta_theme", "search_interviews", "search_themes"]:
-                    rendered = self.corpus_renderer.render(output)
+                
+                # For tools that need rendering, extract JSON and render it
+                if tool_name in ["get_interview_turn", "get_corpus_stats", "explore_meta_theme", "search_interviews", "search_themes", "list_interview_themes"]:
+                    # Extract JSON from output (skip loading messages)
+                    json_output = output
+                    if "{" in output:
+                        # Find the first { and extract from there
+                        json_start = output.find("{")
+                        json_output = output[json_start:]
+                    
+                    # Apply the appropriate renderer
+                    if tool_name in ["get_interview_turn"]:
+                        rendered = self.interview_renderer.render(json_output)
+                    elif tool_name in ["get_corpus_stats", "explore_meta_theme", "search_interviews", "search_themes", "list_interview_themes"]:
+                        rendered = self.corpus_renderer.render(json_output)
                 
                 return output, rendered
                 

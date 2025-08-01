@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uruguay Research CLI Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 14px;
+            padding: 20px;
+        }
+
+        .terminal {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        .input-line {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 0 20px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            background: rgba(26, 26, 26, 0.6);
+            border: 1px solid #333;
+            color: #fff;
+            padding: 14px 20px;
+            font-family: inherit;
+            font-size: 15px;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #555;
+            background: rgba(42, 42, 42, 0.8);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        input[type="text"]::placeholder {
+            color: #888;
+        }
+
+        button {
+            background: rgba(10, 132, 255, 0.15);
+            border: 1px solid rgba(10, 132, 255, 0.3);
+            color: #0a84ff;
+            padding: 14px 30px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 15px;
+            font-weight: 500;
+            border-radius: 25px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        button:hover:not(:disabled) {
+            background: rgba(10, 132, 255, 0.25);
+            border-color: rgba(10, 132, 255, 0.5);
+            color: #409cff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .topic-bubbles {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin: 20px auto;
+            padding: 0 20px;
+            max-width: 900px;
+            justify-content: center;
+        }
+        
+        .topic-bubble {
+            background: rgba(26, 26, 26, 0.6);
+            border: 1px solid #333;
+            color: #b0b0b0;
+            padding: 10px 20px;
+            border-radius: 25px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .topic-bubble:hover {
+            background: rgba(42, 42, 42, 0.8);
+            color: #fff;
+            border-color: #555;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+        
+        .topic-bubble:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        /* Special styling for the corpus overview bubble */
+        .topic-bubble.primary {
+            background: rgba(10, 132, 255, 0.15);
+            border-color: rgba(10, 132, 255, 0.3);
+            color: #0a84ff;
+        }
+        
+        .topic-bubble.primary:hover {
+            background: rgba(10, 132, 255, 0.25);
+            border-color: rgba(10, 132, 255, 0.5);
+            color: #409cff;
+        }
+        
+        /* Settings gear */
+        .settings-icon {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            width: 32px;
+            height: 32px;
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.3s ease, transform 0.3s ease;
+            z-index: 1000;
+        }
+        
+        .settings-icon:hover {
+            opacity: 1;
+            transform: rotate(90deg);
+        }
+        
+        .settings-icon svg {
+            fill: #888;
+            width: 100%;
+            height: 100%;
+        }
+        
+        /* Settings modal */
+        .settings-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 2000;
+            animation: fadeIn 0.3s ease;
+        }
+        
+        .settings-modal.show {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .settings-content {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 15px;
+            padding: 30px;
+            max-width: 450px;
+            width: 90%;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            animation: slideIn 0.3s ease;
+        }
+        
+        .settings-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        
+        .settings-header h2 {
+            margin: 0;
+            color: #fff;
+            font-size: 24px;
+        }
+        
+        .close-button {
+            background: none;
+            border: none;
+            color: #888;
+            font-size: 24px;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s ease;
+        }
+        
+        .close-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+        }
+        
+        .setting-group {
+            margin-bottom: 20px;
+        }
+        
+        .setting-group label {
+            display: block;
+            color: #ccc;
+            margin-bottom: 8px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .setting-group select,
+        .setting-group input[type="number"] {
+            width: 100%;
+            padding: 10px 15px;
+            background: rgba(26, 26, 26, 0.6);
+            border: 1px solid #333;
+            border-radius: 8px;
+            color: #fff;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .setting-group select:focus,
+        .setting-group input[type="number"]:focus {
+            outline: none;
+            border-color: #555;
+            background: rgba(42, 42, 42, 0.8);
+        }
+        
+        .theme-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 50px;
+            height: 26px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #333;
+            transition: 0.4s;
+            border-radius: 26px;
+        }
+        
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background-color: #fff;
+            transition: 0.4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .toggle-slider {
+            background-color: #0a84ff;
+        }
+        
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        @keyframes slideIn {
+            from { transform: translateY(-20px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        /* Light theme */
+        body.light-theme {
+            background: #f0f0f0;
+            color: #000;
+        }
+        
+        body.light-theme .terminal {
+            background: #f0f0f0;
+            color: #000;
+        }
+        
+        body.light-theme input[type="text"],
+        body.light-theme .topic-bubble {
+            background: rgba(255, 255, 255, 0.7);
+            border-color: #ccc;
+            color: #000;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        body.light-theme input[type="text"]:focus,
+        body.light-theme .topic-bubble:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: #999;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-theme button {
+            background: rgba(10, 132, 255, 0.1);
+            border-color: rgba(10, 132, 255, 0.3);
+        }
+        
+        body.light-theme .settings-icon svg {
+            fill: #666;
+        }
+        
+        body.light-theme .settings-content {
+            background: #fff;
+            border-color: #ddd;
+        }
+        
+        body.light-theme .close-button {
+            color: #666;
+        }
+        
+        body.light-theme .setting-group label {
+            color: #333;
+        }
+        
+        body.light-theme .setting-group select,
+        body.light-theme .setting-group input[type="number"] {
+            background: rgba(255, 255, 255, 0.7);
+            border-color: #ccc;
+            color: #000;
+        }
+        
+        body.light-theme .citation {
+            color: #0066cc;
+        }
+        
+        body.light-theme .citation:hover {
+            color: #0052a3;
+            background: rgba(0, 102, 204, 0.1);
+        }
+        
+        /* Light theme tooltips */
+        body.light-theme .tooltip {
+            background: #fff;
+            border-color: #ddd;
+            color: #000;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+        
+        body.light-theme .tooltip-header {
+            background: #f5f5f5;
+            border-bottom-color: #ddd;
+            color: #333;
+        }
+        
+        body.light-theme .tooltip-content {
+            color: #333;
+        }
+        
+        body.light-theme .tooltip-meta {
+            color: #666;
+        }
+        
+        body.light-theme .tooltip-themes {
+            background: #f8f8f8;
+            border-color: #e0e0e0;
+        }
+        
+        body.light-theme .tooltip-quote {
+            background: #f0f4f8;
+            border-left-color: #0066cc;
+            color: #333;
+        }
+        
+        body.light-theme .tooltip-loading {
+            color: #666;
+        }
+
+        .output-container {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+        }
+        
+        #output {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.4;
+            width: 90ch;  /* Fixed width in characters */
+            max-width: 100%;  /* Don't exceed container on small screens */
+            text-align: left;  /* Terminal content stays left-aligned */
+            font-size: 15px;
+            margin: 0 auto;  /* Center the output div itself */
+        }
+
+        /* Make citations clickable */
+        .citation {
+            color: #0af;
+            text-decoration: underline;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.2s ease;
+        }
+
+        .citation:hover {
+            background: rgba(0, 170, 255, 0.2);
+            text-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+        }
+        
+        .citation:active {
+            color: #fff;
+            background: rgba(0, 170, 255, 0.4);
+        }
+
+        /* Tooltip styles */
+        .tooltip {
+            position: absolute;
+            background: #222;
+            border: 1px solid #0af;
+            color: #fff;
+            padding: 15px;
+            max-width: 500px;
+            max-height: 400px;
+            overflow-y: auto;
+            z-index: 1000;
+            font-size: 13px;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.7);
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            border-radius: 4px;
+            transition: opacity 0.2s ease;
+        }
+        
+        /* Custom scrollbar for tooltip */
+        .tooltip::-webkit-scrollbar {
+            width: 8px;
+        }
+        
+        .tooltip::-webkit-scrollbar-track {
+            background: #333;
+            border-radius: 4px;
+        }
+        
+        .tooltip::-webkit-scrollbar-thumb {
+            background: #0af;
+            border-radius: 4px;
+        }
+        
+        .tooltip::-webkit-scrollbar-thumb:hover {
+            background: #5cf;
+        }
+
+        .tooltip.show {
+            display: block;
+        }
+
+        .tooltip-header {
+            color: #0af;
+            margin-bottom: 10px;
+            padding-bottom: 5px;
+            border-bottom: 1px solid #444;
+            font-weight: bold;
+        }
+
+        .tooltip-content {
+            line-height: 1.4;
+        }
+
+        .tooltip-loading {
+            color: #888;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <!-- Settings Icon -->
+    <div class="settings-icon" onclick="openSettings()">
+        <svg viewBox="0 0 24 24">
+            <path d="M12,15.5A3.5,3.5 0 0,1 8.5,12A3.5,3.5 0 0,1 12,8.5A3.5,3.5 0 0,1 15.5,12A3.5,3.5 0 0,1 12,15.5M19.43,12.97C19.47,12.65 19.5,12.33 19.5,12C19.5,11.67 19.47,11.34 19.43,11L21.54,9.37C21.73,9.22 21.78,8.95 21.66,8.73L19.66,5.27C19.54,5.05 19.27,4.96 19.05,5.05L16.56,6.05C16.04,5.66 15.5,5.32 14.87,5.07L14.5,2.42C14.46,2.18 14.25,2 14,2H10C9.75,2 9.54,2.18 9.5,2.42L9.13,5.07C8.5,5.32 7.96,5.66 7.44,6.05L4.95,5.05C4.73,4.96 4.46,5.05 4.34,5.27L2.34,8.73C2.21,8.95 2.27,9.22 2.46,9.37L4.57,11C4.53,11.34 4.5,11.67 4.5,12C4.5,12.33 4.53,12.65 4.57,12.97L2.46,14.63C2.27,14.78 2.21,15.05 2.34,15.27L4.34,18.73C4.46,18.95 4.73,19.03 4.95,18.95L7.44,17.94C7.96,18.34 8.5,18.68 9.13,18.93L9.5,21.58C9.54,21.82 9.75,22 10,22H14C14.25,22 14.46,21.82 14.5,21.58L14.87,18.93C15.5,18.67 16.04,18.34 16.56,17.94L19.05,18.95C19.27,19.03 19.54,18.95 19.66,18.73L21.66,15.27C21.78,15.05 21.73,14.78 21.54,14.63L19.43,12.97Z"/>
+        </svg>
+    </div>
+    
+    <!-- Settings Modal -->
+    <div class="settings-modal" id="settingsModal">
+        <div class="settings-content">
+            <div class="settings-header">
+                <h2>Settings</h2>
+                <button class="close-button" onclick="closeSettings()">×</button>
+            </div>
+            
+            <div class="setting-group">
+                <label for="backend">Backend Provider</label>
+                <select id="backend">
+                    <option value="moonshot">Moonshot</option>
+                    <option value="groq">Groq</option>
+                </select>
+            </div>
+            
+            <div class="setting-group">
+                <label for="iterations">Max Iterations</label>
+                <input type="number" id="iterations" min="1" max="50" value="30">
+            </div>
+            
+            <div class="setting-group">
+                <div class="theme-toggle">
+                    <label for="theme">Light Mode</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="theme" onchange="toggleTheme()">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="terminal">
+        <div class="input-line">
+            <input type="text" id="question" placeholder="Enter your research question..." value="What are the main concerns about healthcare in rural areas?">
+            <button id="runBtn" onclick="runResearch()">Run Research</button>
+        </div>
+        <div class="topic-bubbles">
+            <div class="topic-bubble" onclick="setQuestion('What are the main security concerns expressed by citizens?')">🔒 Security & Safety</div>
+            <div class="topic-bubble" onclick="setQuestion('How do citizens describe the education system challenges?')">📚 Education</div>
+            <div class="topic-bubble" onclick="setQuestion('What are the employment and economic concerns?')">💼 Employment</div>
+            <div class="topic-bubble" onclick="setQuestion('What healthcare access issues are mentioned?')">🏥 Healthcare</div>
+            <div class="topic-bubble" onclick="setQuestion('How is poverty affecting daily life?')">🏚️ Poverty</div>
+            <div class="topic-bubble" onclick="setQuestion('How do rural communities describe their challenges?')">🌾 Rural Issues</div>
+            <div class="topic-bubble" onclick="setQuestion('What do young people say about their future prospects?')">👥 Youth</div>
+            <div class="topic-bubble" onclick="setQuestion('What infrastructure problems are highlighted?')">🏗️ Infrastructure</div>
+            <div class="topic-bubble" onclick="setQuestion('What role does drug trafficking play in community problems?')">⚠️ Drug Issues</div>
+        </div>
+        <div class="output-container">
+            <div id="output"></div>
+        </div>
+    </div>
+
+    <script>
+        // API Configuration - Update this when changing backends
+        const API_URL = 'https://b6358c55f973.ngrok-free.app';  // ngrok URL for local backend
+        // const API_URL = 'http://localhost:8001';  // Direct local backend
+        // const API_URL = 'https://your-app.up.railway.app';  // Railway deployment
+        
+        let eventSource = null;
+        const output = document.getElementById('output');
+        const runBtn = document.getElementById('runBtn');
+        const questionInput = document.getElementById('question');
+        let tooltip = null;
+        let citationCache = {};
+        let tooltipHideTimeout = null;
+        let isTooltipHovered = false;
+        
+        // Function to set question from topic bubbles
+        function setQuestion(question) {
+            questionInput.value = question;
+            questionInput.focus();
+        }
+        
+        // Settings management
+        function openSettings() {
+            document.getElementById('settingsModal').classList.add('show');
+        }
+        
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.remove('show');
+        }
+        
+        function toggleTheme() {
+            document.body.classList.toggle('light-theme');
+            // Save preference
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+        
+        // Load saved settings on page load
+        function loadSettings() {
+            // Theme
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-theme');
+                document.getElementById('theme').checked = true;
+            }
+            
+            // Backend
+            const savedBackend = localStorage.getItem('backend') || 'moonshot';
+            document.getElementById('backend').value = savedBackend;
+            
+            // Iterations
+            const savedIterations = localStorage.getItem('iterations') || '30';
+            document.getElementById('iterations').value = savedIterations;
+        }
+        
+        // Save settings when changed
+        document.addEventListener('DOMContentLoaded', function() {
+            loadSettings();
+            
+            document.getElementById('backend').addEventListener('change', function() {
+                localStorage.setItem('backend', this.value);
+            });
+            
+            document.getElementById('iterations').addEventListener('change', function() {
+                const value = this.value;
+                localStorage.setItem('iterations', value);
+                console.log('Iterations saved:', value);
+            });
+            
+            // Close modal when clicking outside
+            document.getElementById('settingsModal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeSettings();
+                }
+            });
+        });
+
+        // Define tooltip functions first
+        async function showTooltip(event, reference) {
+            // Clear any pending hide timeout
+            if (tooltipHideTimeout) {
+                clearTimeout(tooltipHideTimeout);
+                tooltipHideTimeout = null;
+            }
+            const [interviewId, turnId] = reference.split(':');
+            
+            // Create tooltip if it doesn't exist
+            if (!tooltip) {
+                tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                document.body.appendChild(tooltip);
+                
+                // Add mouse enter/leave handlers to the tooltip itself
+                tooltip.addEventListener('mouseenter', () => {
+                    isTooltipHovered = true;
+                    if (tooltipHideTimeout) {
+                        clearTimeout(tooltipHideTimeout);
+                        tooltipHideTimeout = null;
+                    }
+                });
+                
+                tooltip.addEventListener('mouseleave', () => {
+                    isTooltipHovered = false;
+                    hideTooltip();
+                });
+            }
+
+            // Position tooltip near the cursor for easier access
+            const rect = event.target.getBoundingClientRect();
+            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+            
+            // Calculate position relative to the document, closer to cursor
+            // Position slightly to the right and below the citation
+            const x = rect.right + scrollLeft - 50; // Closer to the right edge of citation
+            const y = rect.bottom + scrollTop - 5; // Reduced gap from 5 to -5 (slight overlap)
+            
+            // Adjust position to keep tooltip on screen
+            tooltip.style.left = Math.min(x, window.innerWidth - 520 + scrollLeft) + 'px';
+            tooltip.style.top = y + 'px';
+
+            // Check cache first
+            if (citationCache[reference]) {
+                displayTooltipContent(reference, citationCache[reference]);
+                return;
+            }
+
+            // Show loading state
+            tooltip.innerHTML = '<div class="tooltip-loading">Loading...</div>';
+            tooltip.classList.add('show');
+
+            try {
+                // Use the same server as the streaming endpoint
+                const response = await fetch(`${API_URL}/interviews/${interviewId}/turns/${turnId}`, {
+                    headers: {
+                        'ngrok-skip-browser-warning': 'true'
+                    }
+                });
+                if (!response.ok) throw new Error('Failed to fetch');
+                
+                const data = await response.json();
+                citationCache[reference] = data;
+                displayTooltipContent(reference, data);
+                
+            } catch (error) {
+                tooltip.innerHTML = `<div class="tooltip-header">Interview ${interviewId}, Turn ${turnId}</div>
+                                   <div class="tooltip-content">Unable to load content</div>`;
+            }
+        }
+
+        function displayTooltipContent(reference, data) {
+            const [interviewId, turnId] = reference.split(':');
+            
+            let content = `<div class="tooltip-header">Interview ${interviewId}`;
+            
+            if (turnId === 'summary') {
+                content += ' - Summary</div>';
+                content += `<div class="tooltip-content">${data.summary || 'Summary not available'}</div>`;
+            } else {
+                content += `, Turn ${turnId}</div>`;
+                content += `<div class="tooltip-content"><strong>${data.speaker || 'Speaker'}:</strong> ${data.text || data.content || 'Content not available'}</div>`;
+            }
+            
+            tooltip.innerHTML = content;
+            tooltip.classList.add('show');
+        }
+
+        function hideTooltip() {
+            // Add a delay before hiding to allow mouse to move to tooltip
+            if (tooltipHideTimeout) {
+                clearTimeout(tooltipHideTimeout);
+            }
+            
+            tooltipHideTimeout = setTimeout(() => {
+                // Only hide if neither citation nor tooltip is hovered
+                if (!isTooltipHovered && tooltip) {
+                    tooltip.classList.remove('show');
+                }
+            }, 300); // 300ms delay gives time to move mouse
+        }
+
+        // Function to open interview in new tab
+        function openInterview(interviewId, turnId) {
+            let url = `interview-view.html?id=${interviewId}`;
+            if (turnId && turnId !== 'summary') {
+                url += `&turn=${turnId}`;
+            }
+            window.open(url, '_blank');
+        }
+
+        // Make functions globally accessible
+        window.showTooltip = showTooltip;
+        window.hideTooltip = hideTooltip;
+        window.openInterview = openInterview;
+
+        function runResearch() {
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            // Clear output and disable button
+            output.textContent = '';
+            runBtn.disabled = true;
+
+            // Get settings
+            const backend = localStorage.getItem('backend') || 'moonshot';
+            const iterations = localStorage.getItem('iterations') || '30';
+            
+            // Debug log to verify settings
+            console.log('Research settings:', { backend, iterations });
+            
+            // Connect to SSE endpoint
+            eventSource = new EventSource(`${API_URL}/stream-research?${new URLSearchParams({
+                question: question,
+                provider: backend,
+                max_iterations: iterations
+            })}`);
+
+            eventSource.onmessage = (event) => {
+                if (event.data === '[DONE]') {
+                    eventSource.close();
+                    runBtn.disabled = false;
+                    output.textContent += '\n\n[Research Complete]';
+                } else {
+                    // Append the line with a newline to preserve formatting
+                    output.textContent += event.data + '\n';
+                    
+                    // Parse citations after adding content
+                    parseCitations();
+                    
+                    // Scroll to bottom
+                    window.scrollTo(0, document.body.scrollHeight);
+                }
+            };
+
+            eventSource.onerror = (error) => {
+                console.error('SSE error:', error);
+                eventSource.close();
+                runBtn.disabled = false;
+                output.textContent += '\n\n[Error: Connection lost]';
+            };
+        }
+
+        function parseCitations() {
+            // Convert text content to HTML with clickable citations
+            const text = output.textContent;
+            
+            // Check if citations have already been parsed (contains HTML)
+            if (output.innerHTML && output.innerHTML.includes('class="citation"')) {
+                return; // Already parsed, don't parse again
+            }
+            
+            // Also check if we've already converted the text to HTML
+            if (output.innerHTML && output.innerHTML !== output.textContent) {
+                return; // HTML has been set, don't parse again
+            }
+            
+            // Handle original double bracket format [[XXX:YYY]] or [[XXX]]
+            let html = text
+                .replace(/\[\[(\d{3})(?::([\d\-]+|summary)?)?\]\]/g, (match, interviewId, turnId) => {
+                    const ref = `${interviewId}:${turnId || 'summary'}`;
+                    return `<span class="citation" data-ref="${ref}" data-original="${match}" onmouseover="showTooltip(event, '${ref}')" onmouseout="hideTooltip()" onclick="openInterview('${interviewId}', '${turnId || 'summary'}')">${match}</span>`;
+                });
+            
+            // Now apply formatting improvements to the HTML
+            // Remove multiple consecutive blank lines (more than 2)
+            html = html.replace(/\n{3,}/g, '\n\n');
+            
+            // Ensure proper spacing around section headers (###)
+            html = html.replace(/\n(#{1,3}\s+)/g, '\n\n$1');
+            html = html.replace(/(#{1,3}\s+[^\n]+)\n(?!\n)/g, '$1\n\n');
+            
+            if (html !== text) {
+                output.innerHTML = html;
+            }
+        }
+
+        // Enter key to run
+        questionInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter' && !runBtn.disabled) {
+                runResearch();
+            }
+        });
+
+        // POST request version (since GET might have length limits)
+        async function runResearchPost() {
+            const question = questionInput.value.trim();
+            if (!question) return;
+
+            output.textContent = '';
+            runBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_URL}/stream-research`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'ngrok-skip-browser-warning': 'true'
+                    },
+                    body: JSON.stringify({
+                        question: question,
+                        provider: 'moonshot',
+                        max_iterations: 15
+                    })
+                });
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value);
+                    const lines = chunk.split('\n');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6);
+                            if (data === '[DONE]') {
+                                runBtn.disabled = false;
+                                output.textContent += '\n\n[Research Complete]';
+                                // Parse citations one final time after completion
+                                parseCitations();
+                            } else {
+                                // Add line with newline (including empty lines for blank lines)
+                                output.textContent += data + '\n';
+                                parseCitations();
+                                // Removed autoscroll
+                            }
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                output.textContent += '\n\n[Error: ' + error.message + ']';
+                runBtn.disabled = false;
+            }
+        }
+
+        // Use POST version instead
+        runBtn.onclick = runResearchPost;
+    </script>
+</body>
+</html>
